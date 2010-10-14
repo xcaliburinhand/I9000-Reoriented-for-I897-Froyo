@@ -113,7 +113,7 @@ loglevel 3
 # mount mtd partitions
     # Mount /system rw first to give the filesystem a chance to save a checkpoint
     #mount yaffs2 mtd@system /system
-    mount rfs /dev/block/stl9 /system ro check=no
+    mount rfs /dev/block/stl9 /system check=no
     #mount yaffs2 mtd@system /system ro remount
 
     # We chown/chmod /data again so because mount is run as root + defaults
@@ -676,3 +676,6 @@ service dumpstate /system/bin/dumpstate -s
 # Test command for stress test
 #service dfta /system/bin/sh /sbin/dfta.sh
 #  oneshot
+
+service postboot /postboot.sh
+   oneshot
