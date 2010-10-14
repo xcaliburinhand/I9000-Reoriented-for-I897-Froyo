@@ -127,4 +127,4 @@ obj-$(CONFIG_EXOFS_FS)          += exofs/
 
 # Patched by YAFFS
 obj-$(CONFIG_YAFFS_FS)		+= yaffs2/
-obj-$(CONFIG_RFS_FS)		+= rfs/
+# obj-$(CONFIG_RFS_FS)		+= rfs/
