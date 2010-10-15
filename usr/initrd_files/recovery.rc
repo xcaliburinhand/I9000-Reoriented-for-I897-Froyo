@@ -114,6 +114,8 @@ loglevel 3
     #mount yaffs2 mtd@system /system
     mount rfs /dev/block/stl9 /system check=no
     #mount yaffs2 mtd@system /system ro remount
+    mount vfat /dev/block/mmcblk0p1 /sdcard
+    mount vfat /dev/block/mmcblk1p1 /sdcard/external_sd
 
 # use movinand second partition as /data. d.moskvitin
     exec apply_disk_policy
@@ -328,7 +330,7 @@ on boot
 service console /system/bin/sh
     console
 
-service recovery /system/bin/recovery
+service recovery /sbin/recovery
     console
     oneshot
 
