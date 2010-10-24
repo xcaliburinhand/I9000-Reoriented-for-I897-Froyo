@@ -2,6 +2,7 @@
  * Driver for keys on GPIO lines capable of generating interrupts.
  *
  * Copyright 2005 Phil Blundell
+ * Copyright (C) 2010 Michael Richter (alias neldar)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -56,6 +57,9 @@ Melfas touchkey register
 
 #define DEVICE_NAME "melfas-touchkey"
 
+#define BACKLIGHT_ON 1		/* added by mr */
+#define BACKLIGHT_OFF 2		/* added by mr */
+
 static int touchkey_keycode[5] =
     { NULL, KEY_BACK, KEY_MENU, KEY_ENTER, KEY_END };
 
@@ -90,6 +94,15 @@ static int i2c_touchkey_probe(struct i2c_client *client,
 extern int get_touchkey_firmware(char *version);
 static int touchkey_led_status = 0;
 
+/* <begin> added by mr */
+static bool touchkey_controller_vdd_on = false;
+#ifdef CONFIG_KEYPAD_CYPRESS_TOUCH_USE_BLN
+static bool backlight_notification_allowed = true;
+bool BacklightNotification_enabled= false;
+EXPORT_SYMBOL(BacklightNotification_enabled);
+#endif
+/* <end> added by mr */
+
 struct i2c_driver touchkey_i2c_driver = {
 	.driver = {
 		   .name = "melfas_touchkey_driver",
@@ -109,13 +122,38 @@ static void set_touchkey_debug(char value)
 	touchkey_debug_count++;
 }
 
+/* <begin> added by mr */
+static void touchkey_power_on(void){
+    gpio_direction_output(_3_GPIO_TOUCH_EN, 1);
+#if !defined(CONFIG_ARIES_NTT)
+    gpio_direction_output(_3_GPIO_TOUCH_CE, 1);
+#endif
+    touchkey_controller_vdd_on = true;
+}
+
+static void touchkey_power_off(void){
+    touchkey_controller_vdd_on = false;
+    gpio_direction_output(_3_GPIO_TOUCH_EN, 0);
+#if !defined(CONFIG_ARIES_NTT)
+    gpio_direction_output(_3_GPIO_TOUCH_CE, 0);
+#endif
+}
+
+static void touchkey_power_off_with_i2c(void){
+    touchkey_power_off();
+    gpio_direction_output(_3_TOUCH_SDA_28V, 0);
+    gpio_direction_output(_3_TOUCH_SCL_28V, 0);
+    
+}
+/* <end> added by mr */
+
 static int i2c_touchkey_read(u8 reg, u8 * val, unsigned int len)
 {
 	int err;
 	int retry = 10;
 	struct i2c_msg msg[1];
 
-	if ((touchkey_driver == NULL)) {
+	if (touchkey_driver == NULL) {
 		printk(KERN_DEBUG "touchkey is not enabled.R\n");
 		return -ENODEV;
 	}
@@ -142,7 +180,7 @@ static int i2c_touchkey_write(u8 * val, unsigned int len)
 	unsigned char data[2];
 	int retry = 2;
 
-	if ((touchkey_driver == NULL) || !(touchkey_enable == 1)) {
+	if (touchkey_driver == NULL) {		/* modified by mr */
 		printk(KERN_DEBUG "touchkey is not enabled.W\n");
 		return -ENODEV;
 	}
@@ -189,7 +227,7 @@ void touchkey_work_func(struct work_struct *p)
 					 touchkey_keycode[2], 0);
 			retry = 10;
 			while (retry--) {
-				gpio_direction_output(_3_GPIO_TOUCH_EN, 0);
+				touchkey_power_off();		/* modified by mr */
 				mdelay(300);
 				init_hw();
 				if (i2c_touchkey_read(KEYCODE_REG, data, 3) >=
@@ -206,12 +244,7 @@ void touchkey_work_func(struct work_struct *p)
 			//touchkey die , do not enable touchkey
 			//enable_irq(IRQ_TOUCH_INT);
 			touchkey_enable = -1;
-			gpio_direction_output(_3_GPIO_TOUCH_EN, 0);
-#if !defined(CONFIG_ARIES_NTT)
-			gpio_direction_output(_3_GPIO_TOUCH_CE, 0);
-#endif
-			gpio_direction_output(_3_TOUCH_SDA_28V, 0);
-			gpio_direction_output(_3_TOUCH_SCL_28V, 0);
+			touchkey_power_off_with_i2c(); 		/* modified by mr */
 			printk("%s touchkey died\n", __func__);
 			set_touchkey_debug('D');
 			return;
@@ -298,12 +331,7 @@ static void melfas_touchkey_early_suspend(struct early_suspend *h)
 	}
 
 	disable_irq(IRQ_TOUCH_INT);
-	gpio_direction_output(_3_GPIO_TOUCH_EN, 0);
-#if !defined(CONFIG_ARIES_NTT)
-	gpio_direction_output(_3_GPIO_TOUCH_CE, 0);
-#endif
-	gpio_direction_output(_3_TOUCH_SDA_28V, 0);
-	gpio_direction_output(_3_TOUCH_SCL_28V, 0);
+	touchkey_power_off_with_i2c();		/* modified by mr */
 }
 
 static void melfas_touchkey_early_resume(struct early_suspend *h)
@@ -315,10 +343,7 @@ static void melfas_touchkey_early_resume(struct early_suspend *h)
 		       touchkey_enable);
 		return;
 	}
-	gpio_direction_output(_3_GPIO_TOUCH_EN, 1);
-#if !defined(CONFIG_ARIES_NTT)
-	gpio_direction_output(_3_GPIO_TOUCH_CE, 1);
-#endif
+	touchkey_power_on();		/* modified by mr */
 	msleep(50);
 
 	//clear interrupt
@@ -406,10 +431,7 @@ static int i2c_touchkey_probe(struct i2c_client *client,
 
 static void init_hw(void)
 {
-	gpio_direction_output(_3_GPIO_TOUCH_EN, 1);
-#if !defined(CONFIG_ARIES_NTT)
-	gpio_direction_output(_3_GPIO_TOUCH_CE, 1);
-#endif
+	touchkey_power_on();		/* modified by mr */
 	msleep(200);
 	s3c_gpio_setpull(_3_GPIO_TOUCH_INT, S3C_GPIO_PULL_NONE);
 	set_irq_type(IRQ_TOUCH_INT, IRQ_TYPE_LEVEL_LOW);
@@ -560,15 +582,29 @@ static ssize_t touch_update_read(struct device *dev,
 	return count;
 }
 
+/* <begin> added by mr */
+static void set_backlight(u8 backlight_status){
+    if (touchkey_controller_vdd_on){
+	touchkey_led_status = backlight_status;
+	i2c_touchkey_write(&backlight_status, 1);
+    }
+}
+/* <end> added by mr */
+
 static ssize_t touch_led_control(struct device *dev,
 				 struct device_attribute *attr, const char *buf,
 				 size_t size)
 {
 	unsigned char data;
-	if (sscanf(buf, "%d\n", &data) == 1) {
+	if(sscanf(buf, "%d\n", &data) == 1) {
 		printk(KERN_DEBUG "touch_led_control: %d \n", data);
-		i2c_touchkey_write(&data, 1);
-		touchkey_led_status = data;
+		if ((touchkey_enable == 1)) {		/* <begin> modified by mr */
+		    if (data == 1)
+			set_backlight(BACKLIGHT_ON);
+		    if (data == 2)
+			set_backlight(BACKLIGHT_OFF);
+		} else
+		    printk(KERN_DEBUG "touchkey is not enabled.W\n");		/* <end> modified by mr */
 	} else
 		printk("touch_led_control Error\n");
 
@@ -584,18 +620,13 @@ static ssize_t touchkey_enable_disable(struct device *dev,
 	if (*buf == '0') {
 		set_touchkey_debug('d');
 		disable_irq(IRQ_TOUCH_INT);
-		gpio_direction_output(_3_GPIO_TOUCH_EN, 0);
-#if !defined(CONFIG_ARIES_NTT)
-		gpio_direction_output(_3_GPIO_TOUCH_CE, 0);
-#endif
+		touchkey_power_off();		/* modified by mr */
+		
 		touchkey_enable = -2;
 	} else if (*buf == '1') {
 		if (touchkey_enable == -2) {
 			set_touchkey_debug('e');
-			gpio_direction_output(_3_GPIO_TOUCH_EN, 1);
-#if !defined(CONFIG_ARIES_NTT)
-			gpio_direction_output(_3_GPIO_TOUCH_CE, 1);
-#endif
+			touchkey_power_on();		/* modified by mr */
 			touchkey_enable = 1;
 			enable_irq(IRQ_TOUCH_INT);
 		}
@@ -606,6 +637,60 @@ static ssize_t touchkey_enable_disable(struct device *dev,
 	return size;
 }
 
+/* <begin> added by mr */
+#ifdef CONFIG_KEYPAD_CYPRESS_TOUCH_USE_BLN
+static ssize_t notification_led_control(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+    unsigned int data;
+    
+    if(sscanf(buf, "%u\n", &data) == 1) {
+	if(data > 0 && data < 5){
+	    printk(KERN_DEBUG "notification_led_control: %u \n", data);
+	    if (data == 1) {
+		if (backlight_notification_allowed){
+		    if (touchkey_enable != 1){
+			touchkey_power_on();		    
+			mdelay(100);
+			
+			/* enable touchkey vdd in sleep mode */
+			BacklightNotification_enabled = true;
+
+			/* write to i2cbus, enable backlights */
+			set_backlight(BACKLIGHT_ON);
+		    } else
+			printk(KERN_DEBUG "notification_led_control: cannot set led, touchkeys are enabled\n");
+		}
+	    }
+	    
+	    if(data == 2) {
+		printk(KERN_DEBUG "notification_led_control: notification led disabled\n");
+
+		/* disable touchkey vdd in sleep mode */
+		BacklightNotification_enabled = false;
+
+		if (touchkey_enable != 1){
+		    /* write to i2cbus, disable backlights */
+		    set_backlight(BACKLIGHT_OFF);
+		}
+	    }
+	    
+	    if(data == 3) {
+		backlight_notification_allowed=true;
+	    }
+	    
+	    if(data == 4) {
+		backlight_notification_allowed=false;
+	    }
+	} else
+	    printk(KERN_DEBUG "notification_led_control: wrong input %u\n", data);
+    } else
+	printk("notification_led_control: input error\n");
+    
+    return size;
+}
+#endif
+/* <end> added by mr */
+
 static DEVICE_ATTR(touch_version, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH,
 		   touch_version_read, touch_version_write);
 static DEVICE_ATTR(touch_update, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH,
@@ -614,6 +699,9 @@ static DEVICE_ATTR(brightness, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, NULL,
 		   touch_led_control);
 static DEVICE_ATTR(enable_disable, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, NULL,
 		   touchkey_enable_disable);
+#ifdef CONFIG_KEYPAD_CYPRESS_TOUCH_USE_BLN
+static DEVICE_ATTR(notification_led_control, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, NULL, notification_led_control);	/* added by mr */
+#endif
 
 static int __init touchkey_init(void)
 {
@@ -622,7 +710,7 @@ static int __init touchkey_init(void)
 	char data[3] = { 0, };
 
 
-		// touchkey_keycode[2] = KEY_ENTER;
+		//touchkey_keycode[2] = KEY_ENTER;
 
 #if !defined(CONFIG_ARIES_NTT)
 	if (ret = gpio_request(_3_GPIO_TOUCH_CE, "_3_GPIO_TOUCH_CE"))
@@ -672,6 +760,15 @@ static int __init touchkey_init(void)
 		pr_err("Failed to create device file(%s)!\n",
 		       dev_attr_enable_disable.attr.name);
 	}
+	/* <begin> added by mr */
+#ifdef CONFIG_KEYPAD_CYPRESS_TOUCH_USE_BLN
+	if (device_create_file(touchkey_update_device.this_device, &dev_attr_notification_led_control) < 0)
+	{
+		printk("%s device_create_file fail dev_attr_touch_update\n",__FUNCTION__);
+		pr_err("Failed to create device file(%s)!\n", dev_attr_notification_led_control.attr.name);
+	}
+#endif
+	/* <end> added by mr */
 
 	touchkey_wq = create_singlethread_workqueue("melfas_touchkey_wq");
 	if (!touchkey_wq)
@@ -703,10 +800,7 @@ static int __init touchkey_init(void)
 			set_touchkey_debug('f');
 		}
 		if (retry <= 0) {
-			gpio_direction_output(_3_GPIO_TOUCH_EN, 0);
-#if !defined(CONFIG_ARIES_NTT)
-			gpio_direction_output(_3_GPIO_TOUCH_CE, 0);
-#endif
+			touchkey_power_off();		/* modified by mr */
 			msleep(300);
 		}
 		init_hw();	//after update, re initalize.
