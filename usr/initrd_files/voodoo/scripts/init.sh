@@ -65,7 +65,7 @@ mount_() {
 			mount -t vfat -o utf8 $sdcard_partition $sdcard
 		;;
 		sdcard_ext)
-			mount -t vfat -o utf8 $sdcard_ext_partition $sdcard_ext
+			mount -t vfat -o utf8 $sdcard_ext_partition $sdcard_ext 2>/dev/null
 		;;
 	esac
 }
@@ -98,20 +98,18 @@ load_stage() {
 					# load the designated stage after verifying it's
 					# signature to prevent security exploit from sdcard
 					if test -f $stagefile; then
+						retcode=1
 						signature=`sha1sum $stagefile | cut -d' ' -f 1`
-						for x in `cat /voodoo/signatures/$1`; do
+						for x in `cat /voodoo/signatures/stage$1`; do
 							if test "$x" = "$signature"  ; then
+								retcode=0
 								log "load stage $1 from SD"
-								lzcat $stagefile | tar -div
+								lzcat $stagefile | tar xv
 								break
 							fi
 						done
-						log "stage $1 not loaded, signature mismatch"
-						retcode=1
 					fi
-					log "stage $1 not loaded, stage file don't exist"
-					retcode=1
-					
+					test retcode = 1 && log "stage $1 not loaded, stage file don't exist"
 				fi
 
 			;;
@@ -159,8 +157,8 @@ check_free() {
 	# more than 100MB on /data, talk to the user
 	test $space_needed -gt 102400 && say "wait"
 
-	# FIXME: get a % of security
-	test $target_free -ge $space_needed
+	# ask for 10% more free space for security reasons
+	test $target_free -ge $(( $space_needed + $space_needed / 10))
 }
 
 detect_valid_ext4_filesystem() {
@@ -191,7 +189,7 @@ wipe_data_filesystem() {
 
 restore_backup() {
 	# clean any previous false dbdata partition
-	rm /dbdata/*
+	rm -r /dbdata/*
 	umount /dbdata
 	check_dbdata
 	mount_ dbdata
@@ -224,6 +222,7 @@ load_soundsystem() {
 	# cache the voices from the SD to the ram
 	# with a size limit to prevent filling memory security expoit
 	if ! test -d /voodoo/voices; then
+		mkdir /voodoo/voices
 		if test -d $sdcard/Voodoo/resources/voices/; then
 			if test "`du -s $sdcard/Voodoo/resources/voices/ | cut -d \/ -f1`" -le 1024; then
 				# copy the voices (no cp command, use cat)
@@ -268,6 +267,9 @@ verify_voodoo_install_in_system() {
 }
 
 letsgo() {
+
+	# remove the tarball in maximum compression mode
+	rm compressed_voodoo_ramdisk.tar.lzma 2>/dev/null
 	
 	# paranoid security: prevent any data leak
 	test -f $data_archive && rm -v $data_archive
@@ -293,7 +295,7 @@ letsgo() {
 	# the froyo experimental tests
 	# because it's set here, it only affect the logs and don't change
 	# other parameters
-	#debug_mode=1
+	debug_mode=1
 	if test $debug_mode = 1; then
 		# copy some logs in it to help debugging
 		mkdir $sdcard/Voodoo/logs 2>/dev/null
@@ -346,8 +348,8 @@ insmod /lib/modules/rfs_glue.ko
 insmod /lib/modules/rfs_fat.ko
 
 # insmod ext4 modules for injected ramdisks
-test -f /lib/modules/ext4.ko && insmod /lib/modules/ext4.ko
 test -f /lib/modules/jbd2.ko && insmod /lib/modules/jbd2.ko
+test -f /lib/modules/ext4.ko && insmod /lib/modules/ext4.ko
 
 # using what /system partition has to offer
 mount -t rfs -o rw,check=no /dev/block/stl9 /system
@@ -444,7 +446,11 @@ if test "`find $sdcard/Voodoo/ -iname 'disable*lagfix*'`" != "" ; then
 		fi
 		
 		say "step1"&
-		make_backup
+		if ! make_backup; then
+			log "error during the backup operation, conversion stops here"
+			log "booting in Ext4 mode"
+			letsgo
+		fi
 		
 		# umount data because we will wipe it
 		umount /data
@@ -509,7 +515,11 @@ if ! detect_valid_ext4_filesystem ; then
 
 	# run the backup operation
 	log "run the backup operation"
-	make_backup
+	if ! make_backup; then
+		log "error during the backup operation, conversion stops here"
+		log "booting in RFS mode"
+		letsgo
+	fi
 	
 	# umount data because the partition will be wiped
 	umount /data
