@@ -455,9 +455,9 @@ service console /system/bin/sh
     group shell system log
     console
 
-service playlogos1 /system/bin/playlogos1
-    user root
-    oneshot
+#service playlogos1 /system/bin/playlogos1
+#    user root
+#    oneshot
 
 # adbd is controlled by the persist.service.adb.enable system property
 service adbd /sbin/adbd
@@ -541,11 +541,11 @@ service killmediaserver /system/bin/killmediaserver
     oneshot
 #to prevent lockup issue during poweron/off test
 
-#service bootanim /system/bin/bootanimation
-#    user graphics
-#    group graphics
-#    disabled
-#    oneshot
+service bootanim /system/bin/bootanimation
+    user graphics
+    group graphics
+    disabled
+    oneshot
 
 service wpa_supplicant /system/bin/wpa_supplicant -Dwext -ieth0 -c/data/wifi/bcm_supp.conf
    disabled
