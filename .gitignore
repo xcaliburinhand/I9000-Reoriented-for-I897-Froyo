@@ -46,7 +46,7 @@ Module.symvers
 # Generated include files
 #
 include/asm
-include/asm-*
+include/asm-arm
 include/config
 include/linux/autoconf.h
 include/linux/compile.h
