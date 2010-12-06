@@ -109,6 +109,11 @@ config ARIES_NTT
           Select S1 NTT
 endchoice
 
+config GALAXY_I897
+	bool "select Captivate"
+	depends on ARIES_EUR
+	help
+	  Captivate specific settings
 
 config DM9000_16BIT
 	bool "DM9000 16-bit"

@@ -114,6 +114,7 @@ loglevel 3
     # Mount /system rw first to give the filesystem a chance to save a checkpoint
     #mount yaffs2 mtd@system /system
     mount rfs /dev/block/stl9 /system check=no
+    mount ext4 /dev/block/stl9 /system remount ro
     #mount yaffs2 mtd@system /system ro remount
 
     # We chown/chmod /data again so because mount is run as root + defaults
@@ -302,23 +303,23 @@ on boot
 
 # Define the memory thresholds at which the above process classes will
 # be killed.  These numbers are in pages (4k).
-#    setprop ro.FOREGROUND_APP_MEM 1536
-#    setprop ro.VISIBLE_APP_MEM 2048
-#    setprop ro.SECONDARY_SERVER_MEM 4096
-#    setprop ro.BACKUP_APP_MEM 4096
-#    setprop ro.HOME_APP_MEM 4096
-#    setprop ro.HIDDEN_APP_MEM 5120
-#    setprop ro.CONTENT_PROVIDER_MEM 5632
-#    setprop ro.EMPTY_APP_MEM 6144
+#    setprop ro.FOREGROUND_APP_MEM 2560
+#    setprop ro.VISIBLE_APP_MEM 4096
+#    setprop ro.SECONDARY_SERVER_MEM 6144
+#    setprop ro.BACKUP_APP_MEM 6144
+#    setprop ro.HOME_APP_MEM 6144
+#    setprop ro.HIDDEN_APP_MEM 11264
+#    setprop ro.CONTENT_PROVIDER_MEM 13312
+#    setprop ro.EMPTY_APP_MEM 16384
 
-    setprop ro.FOREGROUND_APP_MEM 2560 
+    setprop ro.FOREGROUND_APP_MEM 2560
     setprop ro.VISIBLE_APP_MEM 4096
     setprop ro.SECONDARY_SERVER_MEM 6144
     setprop ro.BACKUP_APP_MEM 6144
-    setprop ro.HOME_APP_MEM 6144 
-    setprop ro.HIDDEN_APP_MEM 10240
-    setprop ro.CONTENT_PROVIDER_MEM 11264
-    setprop ro.EMPTY_APP_MEM 12288
+    setprop ro.HOME_APP_MEM 6144
+    setprop ro.HIDDEN_APP_MEM 11264
+    setprop ro.CONTENT_PROVIDER_MEM 13312
+    setprop ro.EMPTY_APP_MEM 16384
 
 
 	
@@ -333,14 +334,14 @@ on boot
     write /proc/sys/vm/overcommit_memory 1
     write /proc/sys/vm/min_free_order_shift 4
 #    write /sys/module/lowmemorykiller/parameters/minfree 1536,2048,4096,5120,5632,6144
-    write /sys/module/lowmemorykiller/parameters/minfree 2560,4096,6144,10240,11264,12288
+    write /sys/module/lowmemorykiller/parameters/minfree 2560,4096,6144,11264,13312,16384
 
     # Set init its forked children's oom_adj.
     write /proc/1/oom_adj -16
 
     # Tweak background writeout
-    write /proc/sys/vm/dirty_expire_centisecs 200
-    write /proc/sys/vm/dirty_background_ratio  5
+    write /proc/sys/vm/dirty_expire_centisecs 800
+    write /proc/sys/vm/dirty_background_ratio 2
 
     # Permissions for System Server and daemons.
     chown radio system /sys/android_power/state
@@ -455,7 +456,7 @@ service console /system/bin/sh
     group shell system log
     console
 
-#service playlogos1 /system/bin/playlogos1
+#service noplaylogos /system/bin/false
 #    user root
 #    oneshot
 
@@ -677,5 +678,9 @@ service dumpstate /system/bin/dumpstate -s
 #service dfta /system/bin/sh /sbin/dfta.sh
 #  oneshot
 
-service postboot /postboot.sh
-   oneshot
+#service postboot /postboot.sh
+#   oneshot
+
+service run_parts /voodoo/scripts/run-parts.sh /system/etc/init.d
+  oneshot 
+

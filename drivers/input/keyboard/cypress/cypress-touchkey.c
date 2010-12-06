@@ -826,8 +826,9 @@ static int __init touchkey_init(void)
 	int retry = 10;
 	char data[3] = { 0, };
 
-
-		//touchkey_keycode[2] = KEY_ENTER;
+#if !defined(CONFIG_GALAXY_I897)
+		touchkey_keycode[2] = KEY_ENTER;
+#endif
 
 #if !defined(CONFIG_ARIES_NTT)
 	if (ret = gpio_request(_3_GPIO_TOUCH_CE, "_3_GPIO_TOUCH_CE"))

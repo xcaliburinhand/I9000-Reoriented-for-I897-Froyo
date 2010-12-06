@@ -15,15 +15,29 @@
 #include <asm/uaccess.h>
 #include <linux/delay.h>
 
+#if defined(CONFIG_GALAXY_I897)
 #define YAMAHA_GSENSOR_TRANSFORMATION    \
     { { 0,  1,  0}, \
       { -1,  0,  0}, \
       { 0,  0,  -1} }
+#else
+#define YAMAHA_GSENSOR_TRANSFORMATION    \
+    { { -1,  0,  0}, \
+      { 0,  -1,  0}, \
+      { 0,  0,  -1} }
+#endif
 
+#if defined(CONFIG_GALAXY_I897)
 #define YAMAHA_MSENSOR_TRANSFORMATION    \
     { { 0,  1,  0}, \
       { -1,  0,   0}, \
       { 0,  0,  1} }
+#else
+#define YAMAHA_MSENSOR_TRANSFORMATION    \
+    { { -1,  0,  0}, \
+      { 0,  1,   0}, \
+      { 0 , 0 ,  -1} }
+#endif
       
 #define YAMAHA_IOCTL_GET_MARRAY            _IOR('Y', 0x01, char[9])
 #define YAMAHA_IOCTL_GET_GARRAY            _IOR('Y', 0x02, char[9])

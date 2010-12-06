@@ -151,9 +151,9 @@ loglevel 3
     chmod 0750 /data/dontpanic
 
     # Collect apanic data, free resources and re-arm trigger
-    copy /proc/apanic_console /data/dontpanic/apanic_console
-    chown root log /data/dontpanic/apanic_console
-    chmod 0640 /data/dontpanic/apanic_console
+
+
+
 
     copy /proc/apanic_threads /data/dontpanic/apanic_threads
     chown root log /data/dontpanic/apanic_threads
@@ -330,16 +330,16 @@ on boot
 
 ## Daemon processes to be run by init.
 ##
-service console /system/bin/sh
-    console
 
-#service recovery /system/bin/recovery
-service recovery /sbin/recovery
-    console
+
+
+#service recovery /voodoo/scripts/recovery_wrapper.sh
+service recovery /voodoo/scripts/recovery_wrapper.sh
+
     oneshot
 
 # adbd is controlled by the persist.service.adb.enable system property
-service adbd /sbin/adbd recovery
+service adbd /voodoo/scripts/adbd_wrapper.sh recovery
     enabled
 
 on property:persist.service.adb.enable=1

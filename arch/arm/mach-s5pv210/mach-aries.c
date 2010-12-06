@@ -641,8 +641,13 @@ static struct sec_jack_port sec_jack_port[] = {
 			.low_active     = 0
 		},
 		{ // SEND/END info
+#if defined(CONFIG_GALAXY_I897)
+			.eint       = IRQ_EINT(18),
+			.gpio       = GPIO_KBC2,
+#else
 			.eint       = IRQ_EINT(30),
 			.gpio       = GPIO_EAR_SEND_END,
+#endif
 			.gpio_af    = GPIO_EAR_SEND_END_AF,
 			.low_active = 1
 		}
