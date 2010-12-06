@@ -491,10 +491,16 @@ static int s3c_pm_enter(suspend_state_t state)
    	if(get_headset_status() & SEC_HEADSET_4_POLE_DEVICE)
 	{
 	    s3c_pm_set_eint(30, 0x4); //sendend
+#if defined(CONFIG_GALAXY_I897)
+            s3c_pm_set_eint(18, 0x4);
+#endif
 	}
     else
     {
         s3c_pm_clear_eint(30);
+#if defined(CONFIG_GALAXY_I897)
+        s3c_pm_clear_eint(18);
+#endif
     }
 
 	//s3c_pm_arch_prepare_irqs();

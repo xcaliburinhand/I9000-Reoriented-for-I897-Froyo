@@ -193,7 +193,11 @@ static int jack_type_detect_change(struct work_struct *ignored)
 					if(!get_recording_status())
 					{
 					#if !defined(CONFIG_ARIES_NTT)
+#if defined(CONFIG_GALAXY_I897)
 						gpio_set_value(GPIO_TV_EN, 0);
+#else
+                                                gpio_set_value(GPIO_MICBIAS_EN, 0);
+#endif
 					#elif defined(CONFIG_ARIES_NTT)
 						gpio_set_value(GPIO_SUB_MICBIAS_EN, 0);
 					#endif
@@ -224,7 +228,11 @@ static int jack_type_detect_change(struct work_struct *ignored)
 					send_end_irq_token=1;
 				}
 			#if !defined(CONFIG_ARIES_NTT)
+#if defined(CONFIG_GALAXY_I897)
 				gpio_set_value(GPIO_TV_EN, 1);
+#else
+                                gpio_set_value(GPIO_MICBIAS_EN, 1);
+#endif
 			#elif defined(CONFIG_ARIES_NTT)
 				gpio_set_value(GPIO_SUB_MICBIAS_EN, 1);
 			#endif
@@ -250,7 +258,11 @@ static int jack_type_detect_change(struct work_struct *ignored)
 					if(!get_recording_status())
 					{
 					#if !defined(CONFIG_ARIES_NTT)
+#if defined(CONFIG_GALAXY_I897)
 						gpio_set_value(GPIO_TV_EN, 0);
+#else
+                                                gpio_set_value(GPIO_MICBIAS_EN, 0);
+#endif
 					#elif defined(CONFIG_ARIES_NTT)
 						gpio_set_value(GPIO_SUB_MICBIAS_EN, 0);
 					#endif						
@@ -282,7 +294,11 @@ static int jack_type_detect_change(struct work_struct *ignored)
 					if(!get_recording_status())
 					{
 					#if !defined(CONFIG_ARIES_NTT)
+#if defined(CONFIG_GALAXY_I897)
 						gpio_set_value(GPIO_TV_EN, 0);
+#else
+                                                gpio_set_value(GPIO_MICBIAS_EN, 0);
+#endif
 					#elif defined(CONFIG_ARIES_NTT)
 						gpio_set_value(GPIO_SUB_MICBIAS_EN, 0);
 #endif
@@ -316,7 +332,11 @@ static int jack_type_detect_change(struct work_struct *ignored)
 			if(!get_recording_status())
 			{
 			#if !defined(CONFIG_ARIES_NTT)
+#if defined(CONFIG_GALAXY_I897)
 				gpio_set_value(GPIO_TV_EN, 0);
+#else
+                                gpio_set_value(GPIO_MICBIAS_EN, 0);
+#endif
 			#elif defined(CONFIG_ARIES_NTT)
 				gpio_set_value(GPIO_SUB_MICBIAS_EN,0);
 #endif
@@ -357,7 +377,11 @@ static int jack_detect_change(struct work_struct *ignored)
 	if(state)
 	{
 #if !defined(CONFIG_ARIES_NTT)
+#if defined(CONFIG_GALAXY_I897)
 		gpio_set_value(GPIO_TV_EN, 1);
+#else
+                gpio_set_value(GPIO_MICBIAS_EN, 1);
+#endif
 	#elif defined(CONFIG_ARIES_NTT)
 		gpio_set_value(GPIO_SUB_MICBIAS_EN, 1);
 #endif
@@ -392,7 +416,11 @@ static int jack_detect_change(struct work_struct *ignored)
         if(!get_recording_status())
         {
 	#if !defined(CONFIG_ARIES_NTT)
+#if defined(CONFIG_GALAXY_I897)
               gpio_set_value(GPIO_TV_EN, 0);
+#else
+              gpio_set_value(GPIO_MICBIAS_EN, 0);
+#endif
 	#elif defined(CONFIG_ARIES_NTT)
 		gpio_set_value(GPIO_SUB_MICBIAS_EN, 0);
 #endif
@@ -526,7 +554,11 @@ static ssize_t select_jack_store(struct device *dev, struct device_attribute *at
 			if(!get_recording_status())
 			{
 			#if !defined(CONFIG_ARIES_NTT)
+#if defined(CONFIG_GALAXY_I897)
 				gpio_set_value(GPIO_TV_EN, 0);
+#else
+                                gpio_set_value(GPIO_MICBIAS_EN, 0);
+#endif
 			#elif defined(CONFIG_ARIES_NTT)
 				gpio_set_value(GPIO_SUB_MICBIAS_EN, 0);
 #endif
@@ -538,7 +570,11 @@ static ssize_t select_jack_store(struct device *dev, struct device_attribute *at
 		case SEC_HEADSET_4_POLE_DEVICE:
 		{
 		#if !defined(CONFIG_ARIES_NTT)
+#if defined(CONFIG_GALAXY_I897)
 			gpio_set_value(GPIO_TV_EN, 1);
+#else
+                        gpio_set_value(GPIO_MICBIAS_EN, 1);
+#endif
 		#elif defined(CONFIG_ARIES_NTT)
 			gpio_set_value(GPIO_SUB_MICBIAS_EN, 1);
 #endif
@@ -563,7 +599,11 @@ static ssize_t select_jack_store(struct device *dev, struct device_attribute *at
 			if(!get_recording_status())
 			{
 			#if !defined(CONFIG_ARIES_NTT)
+#if defined(CONFIG_GALAXY_I897)
 				gpio_set_value(GPIO_TV_EN,0);
+#else
+                                gpio_set_value(GPIO_MICBIAS_EN,0);
+#endif
 			#elif defined(CONFIG_ARIES_NTT)
 				gpio_set_value(GPIO_SUB_MICBIAS_EN, 0);
 #endif
@@ -704,6 +744,7 @@ static int sec_jack_probe(struct platform_device *pdev)
 	}
 	s3c_gpio_slp_cfgpin(GPIO_EARPATH_SEL, S3C_GPIO_SLP_PREV);
 #if !defined(CONFIG_ARIES_NTT)
+#if defined(CONFIG_GALAXY_I897)
 	if(gpio_is_valid(GPIO_TV_EN))
 		{
 			if(gpio_request(GPIO_TV_EN, "GPJ4[4]"))
@@ -712,16 +753,26 @@ static int sec_jack_probe(struct platform_device *pdev)
 		}
 
 	s3c_gpio_slp_cfgpin(GPIO_TV_EN, S3C_GPIO_SLP_PREV); 
+#else
+        if(gpio_is_valid(GPIO_MICBIAS_EN))
+        {
+                if(gpio_request(GPIO_MICBIAS_EN, "GPJ4[2]"))
+                        printk(KERN_ERR "Failed to request GPIO_MICBIAS_EN!\n");
+
+                gpio_direction_output(GPIO_MICBIAS_EN,0);
+        }
+        s3c_gpio_slp_cfgpin(GPIO_MICBIAS_EN, S3C_GPIO_SLP_PREV);
+#endif
 
 #elif defined(CONFIG_ARIES_NTT)// Modify NTTS1
-	if(gpio_is_valid(GPIO_TV_EN))
+	if(gpio_is_valid(GPIO_MICBIAS_EN))
 	{
-		if(gpio_request(GPIO_TV_EN, "GPJ4[2]"))
-			printk(KERN_ERR "Failed to request GPIO_TV_EN!\n");
+		if(gpio_request(GPIO_MICBIAS_EN, "GPJ4[2]"))
+			printk(KERN_ERR "Failed to request GPIO_MICBIAS_EN!\n");
 
-		gpio_direction_output(GPIO_TV_EN,0);
+		gpio_direction_output(GPIO_MICBIAS_EN,0);
 	}
-	s3c_gpio_slp_cfgpin(GPIO_TV_EN, S3C_GPIO_SLP_PREV); 
+	s3c_gpio_slp_cfgpin(GPIO_MICBIAS_EN, S3C_GPIO_SLP_PREV); 
 
 	if(gpio_is_valid(GPIO_SUB_MICBIAS_EN))
 	{
@@ -773,7 +824,11 @@ static int sec_jack_suspend(struct platform_device *pdev, pm_message_t state)
         if(!get_recording_status())
         {
 		#if !defined(CONFIG_ARIES_NTT)
+#if defined(CONFIG_GALAXY_I897)
 			gpio_set_value(GPIO_TV_EN, 0);
+#else
+                        gpio_set_value(GPIO_MICBIAS_EN, 0);
+#endif
 		#elif defined(CONFIG_ARIES_NTT)
 			gpio_set_value(GPIO_SUB_MICBIAS_EN, 0);
 #endif
