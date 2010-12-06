@@ -753,7 +753,7 @@ static int sec_jack_probe(struct platform_device *pdev)
 		}
 
 	s3c_gpio_slp_cfgpin(GPIO_TV_EN, S3C_GPIO_SLP_PREV); 
-#else
+#endif
         if(gpio_is_valid(GPIO_MICBIAS_EN))
         {
                 if(gpio_request(GPIO_MICBIAS_EN, "GPJ4[2]"))
@@ -762,7 +762,6 @@ static int sec_jack_probe(struct platform_device *pdev)
                 gpio_direction_output(GPIO_MICBIAS_EN,0);
         }
         s3c_gpio_slp_cfgpin(GPIO_MICBIAS_EN, S3C_GPIO_SLP_PREV);
-#endif
 
 #elif defined(CONFIG_ARIES_NTT)// Modify NTTS1
 	if(gpio_is_valid(GPIO_MICBIAS_EN))
