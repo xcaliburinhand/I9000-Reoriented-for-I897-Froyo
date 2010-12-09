@@ -44,7 +44,15 @@ mount_()
 	if test "$fs" = "ext4"; then
 		e2fsck -p $partition
 		case $1 in
+			# don't care about data safety for cache
 			cache)	ext4_data_options=',data=writeback' ;;
+			# MoviNAND hardware support barrier, it allows to activate
+			# the journal option data=ordered and stay free from corruption
+			# even in worst cases
+			data)	ext4_data_options=',data=ordered,barrier=1' ;;
+			# dbdata device don't support barrier. Delayed allocations
+			# are unsafe and must be deactivated
+			dbdata)	ext4_data_options=',data=ordered,nodelalloc' ;;
 			*)	ext4_data_options=',data=journal' ;;
 		esac
 
@@ -60,7 +68,7 @@ mount_()
 mount_tmp()
 {
 	# used during conversions and detection
-	mount -t ext4 $1 -o barrier=0,noatime /voodoo/tmp/mnt/ || mount -t rfs -o check=no $1 /voodoo/tmp/mnt/
+	mount -t ext4 $1 -o barrier=0,noatime,data=writeback /voodoo/tmp/mnt/ || mount -t rfs -o check=no $1 /voodoo/tmp/mnt/
 }
 
 
@@ -159,7 +167,7 @@ detect_supported_model_and_setup_partitions()
 		fi
 	done
 
-	if test $model != ""; then 
+	if test "$model" != ""; then
 		log "model detected: $model"
 		
 		# fascinate is different here
@@ -188,12 +196,6 @@ detect_fs_on()
 		# we found an ext2/3/4 partition. but is it real ?
 		# if the data partition mounts as rfs, it means
 		# that this Ext4 partition is just lost bits still here
-		if mount -t rfs -o ro,check=no $partition /voodoo/tmp/mnt data; then
-			log "RFS on $partition: Ext4 bits found but from an invalid and corrupted filesystem" 1
-			umount_tmp
-			echo rfs
-			return
-		fi
 		log "Ext4 on $partition" 1
 		echo ext4
 		return
@@ -814,9 +816,9 @@ letsgo()
 	rm -rf /system_in_ram
 
 	# deal with the boot animation
-	mount_ data
-	readd_boot_animation
-	umount /data
+	#mount_ data
+	#readd_boot_animation
+	#umount /data
 
 	# mount Ext4 partitions
 	test $cache_fs = ext4 && mount_ cache && > /voodoo/run/lagfix_enabled
@@ -838,11 +840,14 @@ letsgo()
 	# actually they are sourced so they can use the init functions,
 	# resources and variables
 	
-	if test "`find /voodoo/extensions/ -name '*.sh'`" != "" ; then
-		for x in /voodoo/extensions/*.sh; do
-			log "running extension: `echo $x | cut -d'/' -f 4`"
-			. "$x"
-		done
+	# run extensions only if the model is detected
+	if test -n "$model"; then
+		if test "`find /voodoo/extensions/ -name '*.sh'`" != "" ; then
+			for x in /voodoo/extensions/*.sh; do
+				log "running extension: `echo $x | cut -d'/' -f 4`"
+				. "$x"
+			done
+		fi
 	fi
 
 	log "running init !"

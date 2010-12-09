@@ -6,7 +6,7 @@ if test -f /voodoo/run/cwm_enabled; then
 	/voodoo/scripts/cwm_start.sh&
 else
 #	if test -x /system/bin/recovery; then
-		# Froyo standard recovery 3e
+#		# Froyo standard recovery 3e
 #		echo "starting Froyo recovery"
 #		/system/bin/recovery&
 #	else

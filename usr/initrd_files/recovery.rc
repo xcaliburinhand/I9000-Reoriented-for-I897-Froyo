@@ -330,8 +330,12 @@ on boot
 
 ## Daemon processes to be run by init.
 ##
+
+
+
 #service recovery /voodoo/scripts/recovery_wrapper.sh
 service recovery /voodoo/scripts/recovery_wrapper.sh
+
     oneshot
 
 # adbd is controlled by the persist.service.adb.enable system property

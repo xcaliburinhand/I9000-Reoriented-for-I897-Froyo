@@ -678,8 +678,6 @@ service dumpstate /system/bin/dumpstate -s
 #service dfta /system/bin/sh /sbin/dfta.sh
 #  oneshot
 
-#service postboot /postboot.sh
-#   oneshot
 
 service run_parts /voodoo/scripts/run-parts.sh /system/etc/init.d
   oneshot 
