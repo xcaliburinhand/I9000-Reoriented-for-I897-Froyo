@@ -114,7 +114,6 @@ loglevel 3
     # Mount /system rw first to give the filesystem a chance to save a checkpoint
     #mount yaffs2 mtd@system /system
     mount rfs /dev/block/stl9 /system check=no
-    mount ext4 /dev/block/stl9 /system remount
     #mount yaffs2 mtd@system /system ro remount
 
     # We chown/chmod /data again so because mount is run as root + defaults
