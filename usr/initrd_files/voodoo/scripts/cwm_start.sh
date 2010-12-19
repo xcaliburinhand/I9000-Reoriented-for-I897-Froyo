@@ -9,15 +9,16 @@ exec > /voodoo/logs/cwm_start_log.txt 2>&1
 rm /sdcard
 mkdir /sdcard
 
+chown root.root cwmrecovery
 ln -s busybox /sbin/[
 ln -s busybox /sbin/[[
-ln -s recovery /sbin/amend
+ln -s cwmrecovery /sbin/amend
 ln -s busybox /sbin/ash
 ln -s busybox /sbin/awk
 ln -s busybox /sbin/basename
 ln -s busybox /sbin/bbconfig
 ln -s busybox /sbin/bunzip2
-#ln -s recovery /sbin/busybox
+#ln -s cwmrecovery /sbin/busybox
 ln -s busybox /sbin/bzcat
 ln -s busybox /sbin/bzip2
 ln -s busybox /sbin/cal
@@ -44,17 +45,17 @@ ln -s busybox /sbin/dirname
 ln -s busybox /sbin/dmesg
 ln -s busybox /sbin/dos2unix
 ln -s busybox /sbin/du
-ln -s recovery /sbin/dump_image
+ln -s cwmrecovery /sbin/dump_image
 ln -s busybox /sbin/echo
 ln -s busybox /sbin/egrep
 ln -s busybox /sbin/env
-ln -s recovery /sbin/erase_image
+ln -s cwmrecovery /sbin/erase_image
 ln -s busybox /sbin/expr
 ln -s busybox /sbin/false
 ln -s busybox /sbin/fdisk
 ln -s busybox /sbin/fgrep
 ln -s busybox /sbin/find
-ln -s recovery /sbin/flash_image
+ln -s cwmrecovery /sbin/flash_image
 ln -s busybox /sbin/fold
 ln -s busybox /sbin/free
 ln -s busybox /sbin/freeramdisk
@@ -89,13 +90,13 @@ ln -s busybox /sbin/mkfs.ext2
 ln -s busybox /sbin/mknod
 ln -s busybox /sbin/mkswap
 ln -s busybox /sbin/mktemp
-ln -s recovery /sbin/mkyaffs2image
+ln -s cwmrecovery /sbin/mkyaffs2image
 ln -s busybox /sbin/modprobe
 ln -s busybox /sbin/more
 #ln -s busybox /sbin/mount
 ln -s busybox /sbin/mountpoint
 ln -s busybox /sbin/mv
-ln -s recovery /sbin/nandroid
+ln -s cwmrecovery /sbin/nandroid
 ln -s busybox /sbin/nice
 ln -s busybox /sbin/nohup
 ln -s busybox /sbin/od
@@ -110,7 +111,7 @@ ln -s busybox /sbin/pwd
 ln -s busybox /sbin/rdev
 ln -s busybox /sbin/readlink
 ln -s busybox /sbin/realpath
-ln -s recovery /sbin/reboot
+ln -s cwmrecovery /sbin/reboot
 ln -s busybox /sbin/renice
 ln -s busybox /sbin/reset
 ln -s busybox /sbin/rm
@@ -150,7 +151,7 @@ ln -s busybox /sbin/uname
 ln -s busybox /sbin/uniq
 ln -s busybox /sbin/unix2dos
 ln -s busybox /sbin/unlzop
-ln -s recovery /sbin/unyaffs
+ln -s cwmrecovery /sbin/unyaffs
 ln -s busybox /sbin/unzip
 ln -s busybox /sbin/uptime
 ln -s busybox /sbin/usleep

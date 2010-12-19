@@ -163,7 +163,7 @@ loglevel 3
 
     # Same reason as /data above
     #mount yaffs2 mtd@cache /cache nosuid nodev
-    #mount rfs /dev/block/stl11 /cache nosuid nodev check=no
+    mount rfs /dev/block/stl11 /cache nosuid nodev check=no
     #chown system cache /cache
     #chmod 0770 /cache
 
