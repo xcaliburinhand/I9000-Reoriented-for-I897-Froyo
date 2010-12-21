@@ -13,6 +13,6 @@ else
 #	else
 		# Eclair standard recovery 2e
 		echo "starting Eclair recovery"
-		/sbin/recovery&
+		/sbin/cwmrecovery&
 #	fi
 fi
