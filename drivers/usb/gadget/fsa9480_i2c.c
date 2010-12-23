@@ -1281,6 +1281,7 @@ void FSA9480_ProcessDevice(u8 dev1, u8 dev2, u8 attach)
 				{
 					DEBUG_FSA9480("FSA9480_DEV_TY2_JIG_UART_ON --- ATTACH\n");
 					set_dock_state((int)CAR_DOCK_INSERTED);
+					FSA9480_Enable_SPK(1);
 					g_dock = CAR_DOCK_INSERTED;
 				}
 				else
@@ -1586,8 +1587,8 @@ void connectivity_switching_init(struct work_struct *ignored)
 
 	if((switch_sel == 1) || (factoryresetstatus == 0xAE)){
 		usb_switch_select(USBSTATUS_SAMSUNG_KIES);
-		mtp_mode_on = 1;
-		ap_usb_power_on(0);
+		mtp_mode_on = 0;
+//		ap_usb_power_on(0);
 		UsbMenuSelStore(0);	
 	}
 	else{
@@ -1595,8 +1596,8 @@ void connectivity_switching_init(struct work_struct *ignored)
 			if(samsung_kies_sel){
 				usb_switch_select(USBSTATUS_SAMSUNG_KIES);
 				/*USB Power off till MTP Appl launching*/				
-				mtp_mode_on = 1;
-				ap_usb_power_on(0);
+				mtp_mode_on = 0;
+//				ap_usb_power_on(0);
 			}
 			else if(mtp_sel){
 				usb_switch_select(USBSTATUS_MTPONLY);

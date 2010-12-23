@@ -33,8 +33,6 @@
 //#include <plat/regs-gpio.h>
 #define BT_SLEEP_ENABLER
 
-#define IRQ_BT_HOST_WAKE      IRQ_EINT(21)
-
 static struct wake_lock rfkill_wake_lock;
 #ifdef BT_SLEEP_ENABLER
 static struct wake_lock bt_wake_lock;

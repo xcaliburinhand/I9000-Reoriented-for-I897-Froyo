@@ -188,12 +188,9 @@ unsigned int fg_read_soc(void)
 
 #else // CONFIG_ARIES_NTT
 
-	if(FGPureSOC >= 100)
-	{
+	if (FGPureSOC >= 100) {
 		FGAdjustSOC = FGPureSOC;
-	}
-	else
-	{
+	} else {
 		if(FGPureSOC >= 70)
 			FGAdjustSOC = 100; //1%
 		else
@@ -201,25 +198,21 @@ unsigned int fg_read_soc(void)
 	}
 
 	// rounding off and Changing to percentage.
-	FGSOC=FGAdjustSOC/100;
+	FGSOC = FGAdjustSOC / 100;
 
-	if(FGAdjustSOC%100 >= 50 )
-	{
-		FGSOC+=1;
+	if (!FGSOC)
+		return 0;
+
+	if (FGAdjustSOC < 1500) {
+		FGSOC = (FGAdjustSOC * 4 / 3 + 50) / 100;
+	} else if (FGAdjustSOC < 7600) {
+		FGSOC += 5;
+	} else {
+		FGSOC = ((FGAdjustSOC - 7600) * 8 / 10 + 50) / 100 + 81;
 	}
 
-	if(FGSOC>=26)
-	{
-		FGSOC+=4;
-	}
-	else
-	{
-		FGSOC=(30*FGAdjustSOC)/26/100;
-	}
-
-	if(FGSOC>=100)
-	{
-		FGSOC=100;
+	if(FGSOC > 100) {
+		FGSOC = 100;
 	}
 
 #endif // CONFIG_ARIES_NTT

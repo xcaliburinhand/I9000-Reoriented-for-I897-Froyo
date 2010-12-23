@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Broadcom Dongle Host Driver (DHD), common DHD core.
  *
  * Copyright (C) 1999-2010, Broadcom Corporation
@@ -1244,12 +1244,19 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	uint bcn_timeout = 3;
 	int scan_assoc_time = 40;
 	int scan_unassoc_time = 80;
+	int roam_delta[2];
+    	int roam_scan_period = 2;
+
 #ifdef SCAN_5G_HOMECHANNEL_TIME
 	int scan_home_time = 60;
 #endif
 #ifdef FCC_CERT
         uint spect = 0;
 #endif
+	struct file *fp      = NULL;
+	char* filepath       = "/data/.psm.info";
+	int qosinfo = 1; /* enable VO AC */
+
 
 #ifdef SOFTAP
 	if(!ap_fw_loaded) {
@@ -1273,7 +1280,41 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	bcmstrtok(&ptr, "\n", 0);
 	/* Print fw version info */
 	DHD_ERROR(("Firmware version = %s\n", buf));
-#ifdef BCMDISABLE_PM
+
+/////////////////////////
+	/* Set PowerSave mode */
+	fp = filp_open(filepath, O_RDONLY, 0);
+	if(IS_ERR(fp))// the file is not exist
+	{
+		/* Set PowerSave mode */
+		dhdcdc_set_ioctl(dhd, 0, WLC_SET_PM, (char *)&power_mode, sizeof(power_mode));
+
+		fp = filp_open(filepath, O_RDWR | O_CREAT, 0666);
+		if(IS_ERR(fp)||(fp==NULL))
+		{
+			DHD_ERROR(("[WIFI] %s: File open error\n", filepath));
+		}
+		else
+		{
+			char buffer[2]   = {1};
+			if(fp->f_mode & FMODE_WRITE)
+			{
+				sprintf(buffer,"1\n");
+				fp->f_op->write(fp, (const char *)buffer, sizeof(buffer), &fp->f_pos);
+			}
+		}
+	}
+	else
+	{
+		char buffer[1]   = {0};
+		kernel_read(fp, fp->f_pos, buffer, 1);
+		if(strncmp(buffer, "1",1)==0)
+		{
+			/* Set PowerSave mode */
+			dhdcdc_set_ioctl(dhd, 0, WLC_SET_PM, (char *)&power_mode, sizeof(power_mode));
+		}
+		else
+		{
 	/*Disable Power save features for CERTIFICATION*/
 	power_mode = 0;
  
@@ -1283,10 +1324,28 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	/* Disable MPC */    
 	bcm_mkiovar("mpc", (char *)&power_mode, 4, iovbuf, sizeof(iovbuf));
 	dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, iovbuf, sizeof(iovbuf));
-#else
-	/* Set PowerSave mode */
-	dhdcdc_set_ioctl(dhd, 0, WLC_SET_PM, (char *)&power_mode, sizeof(power_mode));
-#endif //BCMDISABLE_PM
+
+			fp = filp_open(filepath, O_RDWR | O_CREAT, 0666);
+			if(IS_ERR(fp)||(fp==NULL))
+			{
+				DHD_ERROR(("[WIFI] %s: File open error\n", filepath));
+			}
+			else
+			{
+				char buffer[2]   = {1};
+				if(fp->f_mode & FMODE_WRITE)
+				{
+					sprintf(buffer,"1\n");
+					fp->f_op->write(fp, (const char *)buffer, sizeof(buffer), &fp->f_pos);
+				}
+			}
+		}
+	}
+
+	if(fp)
+		filp_close(fp, NULL);
+
+/////////////////////////
 
 #ifdef SOFTAP
 	if(!ap_fw_loaded) {
@@ -1316,6 +1375,10 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 	bcm_mkiovar("roam_off", (char *)&dhd_roam, 4, iovbuf, sizeof(iovbuf));
 	dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, iovbuf, sizeof(iovbuf));
 
+	/* Enable UAPSD for voice packet AC=VO */
+	bcm_mkiovar("wme_qosinfo", (char *)&qosinfo, 4, iovbuf, sizeof(iovbuf)); 
+	dhdcdc_set_ioctl(dhd, 0, WLC_SET_VAR, iovbuf, sizeof(iovbuf));
+ 
 	/* Force STA UP */
 	if (dhd_radio_up)
 		dhdcdc_set_ioctl(dhd, 0, WLC_UP, (char *)&up, sizeof(up));
@@ -1328,6 +1391,15 @@ dhd_preinit_ioctls(dhd_pub_t *dhd)
 		sizeof(scan_assoc_time));
 	dhdcdc_set_ioctl(dhd, 0, WLC_SET_SCAN_UNASSOC_TIME, (char *)&scan_unassoc_time,
 		sizeof(scan_unassoc_time));
+
+    	/* roaming delta = 10 dBm */
+    	roam_delta[0] = 10;
+    	roam_delta[1] = WLC_BAND_AUTO;
+    	dhdcdc_set_ioctl(dhd, 0, WLC_SET_ROAM_DELTA, (char *)roam_delta, sizeof(roam_delta));
+   
+    	/* roaming scan period = 2 seconds */
+	dhdcdc_set_ioctl(dhd, 0, WLC_SET_ROAM_SCAN_PERIOD, (char *)&roam_scan_period, sizeof(roam_scan_period));
+
 
 #ifdef SCAN_5G_HOMECHANNEL_TIME
 	DHD_INFO(("Scan Channel Home Time Set : 80 ms \r\n"));

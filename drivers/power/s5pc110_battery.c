@@ -1439,24 +1439,17 @@ static int s3c_cable_status_update(void)
 	
 }
 
-
-#if defined(CONFIG_ARIES_NTT)
-	extern int bCamera_start;
-#endif
-
 static int s3c_get_bat_temp(void)
 {
 	int temp = 0;
 	int array_size = 0;
 	int i = 0;
 	int temp_adc_aver=0;
-#if defined(CONFIG_ARIES_NTT)
-	int temp_high_limit=TEMP_HIGH_BLOCK;
-	int temp_high_recover=TEMP_HIGH_RECOVER;
-#endif
 	int temp_adc = s3c_read_temp();
 	int health = s3c_get_bat_health();
 	unsigned int ex_case = 0;
+	unsigned int event_case = 0;
+	int temp_high_block, temp_high_recover;
 
 	//pr_info("[BAT]:%s\n", __func__);
 
@@ -1492,38 +1485,30 @@ static int s3c_get_bat_temp(void)
 		goto __map_temperature__;
 	}
 
-#if defined(CONFIG_ARIES_NTT)
-
-//	if(s3c_bat_info.device_state & OFFSET_CAMERA_ON)
-	if(bCamera_start==TRUE)
-
+	
+#ifdef SUPPORT_EVENT_TEMP_BLOCK
+	// Event CHG Block
+	event_case = OFFSET_MP3_PLAY | OFFSET_VOICE_CALL_2G | OFFSET_VOICE_CALL_3G	| OFFSET_VIDEO_PLAY;
+	if (s3c_bat_info.device_state & event_case)
 	{
-		temp_high_limit=temper_table[TEMP_IDX_ZERO_CELSIUS+50][0];
-		temp_high_recover=temper_table[TEMP_IDX_ZERO_CELSIUS+45][0];
-		printk("[BAT]:%s : OFFSET_CAMERA_ON=0x%x \n", __func__, s3c_bat_info.device_state);
+		temp_high_block   = TEMP_EVENT_HIGH_BLOCK;
+		temp_high_recover = TEMP_EVENT_HIGH_RECOVER;
 	}
 	else
+#endif
 	{
-		temp_high_limit=TEMP_HIGH_BLOCK;
-		temp_high_recover=TEMP_HIGH_RECOVER;
-		printk("[BAT]:%s : TEMP_HIGH_BLOCK=0x%x \n", __func__, s3c_bat_info.device_state);
+		temp_high_block   = TEMP_HIGH_BLOCK;
+		temp_high_recover = TEMP_HIGH_RECOVER;
 	}
 
-	if (temp_adc_aver <= temp_high_limit)
-#else
-	if (temp_adc_aver <= TEMP_HIGH_BLOCK)
-#endif
+	if (temp_adc_aver <= temp_high_block)
 	{
 		if (health != POWER_SUPPLY_HEALTH_OVERHEAT && health != POWER_SUPPLY_HEALTH_UNSPEC_FAILURE)
 		{
 			s3c_temp_control(POWER_SUPPLY_HEALTH_OVERHEAT);
 		}
 	}
-#if defined(CONFIG_ARIES_NTT)
 	else if (temp_adc_aver >= temp_high_recover && temp_adc_aver <= TEMP_LOW_RECOVER)
-#else
-	else if (temp_adc_aver >= TEMP_HIGH_RECOVER && temp_adc_aver <= TEMP_LOW_RECOVER)
-#endif
 	{
 		if (health == POWER_SUPPLY_HEALTH_OVERHEAT || health == POWER_SUPPLY_HEALTH_FREEZE)
 		{
@@ -1840,23 +1825,17 @@ static void battery_early_suspend(struct early_suspend *h)
 {
 	u32 con;
 
-	/*hsmmc clock disable*/
-	con = readl(S5P_CLKGATE_IP2);
-	con &= ~(S5P_CLKGATE_IP2_HSMMC3|S5P_CLKGATE_IP2_HSMMC2|S5P_CLKGATE_IP2_HSMMC1 \
-		|S5P_CLKGATE_IP2_HSMMC0);
-	writel(con, S5P_CLKGATE_IP2);
-
 	/*g3d clock disable*/
 	con = readl(S5P_CLKGATE_IP0);
 	con &= ~S5P_CLKGATE_IP0_G3D;
 	writel(con, S5P_CLKGATE_IP0);
 
 	/*power gating*/
-    s5p_power_gating(S5PC110_POWER_DOMAIN_G3D, DOMAIN_LP_MODE);
-    s5p_power_gating(S5PC110_POWER_DOMAIN_MFC, DOMAIN_LP_MODE);
-    s5p_power_gating(S5PC110_POWER_DOMAIN_TV, DOMAIN_LP_MODE);
-    s5p_power_gating(S5PC110_POWER_DOMAIN_CAM, DOMAIN_LP_MODE);
-    s5p_power_gating(S5PC110_POWER_DOMAIN_AUDIO, DOMAIN_LP_MODE);
+	s5p_power_gating(S5PC110_POWER_DOMAIN_G3D, DOMAIN_LP_MODE);
+	s5p_power_gating(S5PC110_POWER_DOMAIN_MFC, DOMAIN_LP_MODE);
+	s5p_power_gating(S5PC110_POWER_DOMAIN_TV, DOMAIN_LP_MODE);
+	s5p_power_gating(S5PC110_POWER_DOMAIN_CAM, DOMAIN_LP_MODE);
+	s5p_power_gating(S5PC110_POWER_DOMAIN_AUDIO, DOMAIN_LP_MODE);
 /*	con = readl(S5P_NORMAL_CFG);
 	con &= ~(S5PC110_POWER_DOMAIN_G3D|S5PC110_POWER_DOMAIN_MFC|S5PC110_POWER_DOMAIN_TV \
 		|S5PC110_POWER_DOMAIN_CAM|S5PC110_POWER_DOMAIN_AUDIO);

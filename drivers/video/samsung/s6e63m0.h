@@ -7,6 +7,16 @@
 #define COMMAND_ONLY		0xFE
 #define DATA_ONLY		0xFF
 
+#if defined(CONFIG_ARIES_LATONA)
+extern const unsigned short nt35510_SEQ_SETTING[];
+extern const unsigned short nt35580_SEQ_SETTING[];
+extern const unsigned short nt35580_SEQ_SLEEP_IN[];
+extern const unsigned short nt35580_SEQ_CABC_OFF[];
+extern const unsigned short nt35580_SEQ_CABC_UI[];
+extern const unsigned short nt35580_SEQ_CABC_IMAGE[];
+extern const unsigned short nt35580_SEQ_CABC_VIDEO[];
+#endif
+
 extern const unsigned short s6e63m0_SEQ_DISPLAY_ON[];
 extern const unsigned short s6e63m0_SEQ_DISPLAY_OFF[];
 extern const unsigned short s6e63m0_SEQ_STANDBY_ON[];

@@ -19,6 +19,9 @@
 #define REGS_HYS		0x2 // Write Only
 #define REGS_CYCLE		0x3 // Write Only
 #define REGS_OPMOD		0x4 // Write Only
+#if defined(CONFIG_GP2A_MODE_B)
+#define REGS_CON	0x6 // Write Only
+#endif
 
 /* sensor type */
 #define LIGHT           0
@@ -99,11 +102,19 @@ typedef enum t_light_state
 /* initial value for sensor register */
 static u8 gp2a_original_image[8] =
 {
+#if defined(CONFIG_GP2A_MODE_B)
+	0x00,	// REGS_PROX
+	0x08,	// REGS_GAIN
+	0x40,	// REGS_HYS
+	0x04,	// REGS_CYCLE
+	0x03,	// REGS_OPMOD
+#else
 	0x00,  
 	0x08,  
 	0xC2,  
 	0x04,
 	0x01,
+#endif
 };
 
 /* for state transition */
@@ -128,6 +139,9 @@ struct gp2a_data {
 
 
 struct workqueue_struct *gp2a_wq;
+#if defined(CONFIG_GP2A_MODE_B)
+struct workqueue_struct *gp2a_wq_prox;
+#endif
 
 /* prototype */
 extern short gp2a_get_proximity_value(void);

@@ -21,6 +21,9 @@
 #include <plat/irqs.h>
 #include <mach/hardware.h>
 #include <mach/gpio.h>
+#if defined(CONFIG_ARIES_LATONA)
+#include <linux/miscdevice.h>
+#endif
 #include <linux/jiffies.h>
 #include "qt602240.h"
 
@@ -32,6 +35,44 @@
 
 #include <mach/gpio.h>
 
+#if defined(CONFIG_ARIES_LATONA)
+
+#define __SUPPORT_TOUCH_KEY__
+
+#if defined(__SUPPORT_TOUCH_KEY__)
+// Key codes
+#define	TOUCH_MENU		KEY_MENU
+#define	TOUCH_HOME		KEY_HOME
+#define	TOUCH_BACK		KEY_BACK
+#define	TOUCH_SEARCH	KEY_SEARCH
+
+// for dedicated key object on TSP
+#define MAX_KEYS	4
+
+static const int touchkey_keycodes[] = {
+				TOUCH_HOME,
+				TOUCH_MENU,
+				TOUCH_BACK,
+				TOUCH_SEARCH
+			};
+
+static const int touchkey_keycodes_2[] = {
+				TOUCH_MENU,
+				TOUCH_BACK,
+			};
+
+static int touchkey_size = 2;
+
+static int touchkey_status[MAX_KEYS];
+
+#define TK_STATUS_PRESS			1
+#define TK_STATUS_RELEASE		0
+
+#endif
+
+#endif  // CONFIG_ARIES_LATONA
+
+
 struct i2c_driver qt602240_i2c_driver;
 
 struct workqueue_struct *qt602240_wq = NULL;
@@ -39,8 +80,16 @@ struct workqueue_struct *qt602240_wq = NULL;
 struct qt602240_data *qt602240 = NULL;
 
 #if ENABLE_NOISE_TEST_MODE
-                                       //botton_right    botton_left            center              top_right          top_left 
-unsigned char test_node[TEST_POINT_NUM] = {12,       		   20, 		   104,    		        188,     			   196};        
+
+
+                                       
+#if defined(CONFIG_ARIES_LATONA)
+//botton_right    botton_left            center              top_right          top_left 		MenuKey		BackKey
+unsigned char test_node[TEST_POINT_NUM] = {13,       		   21, 		   113,    		        193,     			   201,	203,	215};        
+#else
+//botton_right    botton_left            center              top_right          top_left 		
+unsigned char test_node[TEST_POINT_NUM] = {12,       		   20, 		   104,    		        188,     			   196};   
+#endif
 
 unsigned int return_refer_0, return_refer_1, return_refer_2, return_refer_3, return_refer_4;
 unsigned int return_delta_0, return_delta_1, return_delta_2, return_delta_3, return_delta_4;
@@ -100,6 +149,9 @@ static uint8_t tsp_version;
 static uint8_t cal_check_flag = 0u;
 //static int CAL_THR = 10;
 
+#if defined(CONFIG_ARIES_LATONA)
+static int touchkey_control(int data);
+#endif
 
 /*------------------------------ for tunning ATmel - start ----------------------------*/
 struct class *touch_class;
@@ -211,15 +263,17 @@ void qt_Power_Config_Init(void)
 
 void qt_Acquisition_Config_Init(void)
 {
-    acquisition_config.chrgtime = 7; // 2us
+#if defined(CONFIG_ARIES_LATONA)
+	acquisition_config.chrgtime 	= 10;
+	    acquisition_config.driftst 	= 1;
+#else
+    acquisition_config.chrgtime 	= 7; // 2us
+        acquisition_config.driftst 	= 0; // 4s
+#endif
     acquisition_config.reserved = 0;
-
     acquisition_config.tchdrift = 5; // 4s
-    acquisition_config.driftst = 0; // 4s
-
     acquisition_config.tchautocal = 0; // infinite
     acquisition_config.sync = 0; // disabled
-
     acquisition_config.atchcalst = 9;
     acquisition_config.atchcalsthr = 35;
 
@@ -250,11 +304,20 @@ void qt_Multitouchscreen_Init(void)
     touchscreen_config.xorigin = 0;
     touchscreen_config.yorigin = 0;
 
+#if defined(CONFIG_ARIES_LATONA)
+    touchscreen_config.xsize = 18;
+#else
     touchscreen_config.xsize = 19;
+#endif
     touchscreen_config.ysize = 11;
 
+#if defined(CONFIG_ARIES_LATONA)
+    touchscreen_config.akscfg = 1;
+	touchscreen_config.blen = 16; // 0x11;
+#else
     touchscreen_config.akscfg = 0;
 	touchscreen_config.blen = 0x21;
+#endif
 
     touchscreen_config.tchthr = 40;//45;
 
@@ -284,10 +347,17 @@ void qt_Multitouchscreen_Init(void)
     touchscreen_config.yloclip = 0;
     touchscreen_config.yhiclip = 0;
 
+#if defined(CONFIG_ARIES_LATONA)
+    touchscreen_config.xedgectrl = 0;
+    touchscreen_config.xedgedist = 0;
+    touchscreen_config.yedgectrl = 0;
+    touchscreen_config.yedgedist = 0;
+#else
     touchscreen_config.xedgectrl = 143;
     touchscreen_config.xedgedist = 40;
     touchscreen_config.yedgectrl = 143;
     touchscreen_config.yedgedist = 80;
+#endif
 
 	touchscreen_config.jumplimit = 18;
 	
@@ -344,6 +414,17 @@ void qt_Multitouchscreen_normal_Init(void)
 
 void qt_KeyArray_Init(void)
 {
+#if defined(CONFIG_ARIES_LATONA)
+    keyarray_config.ctrl 	= 131; // 143;
+    keyarray_config.xorigin = 16;
+    keyarray_config.yorigin = 11;
+    keyarray_config.xsize 	= 2;
+    keyarray_config.ysize 	= 1;
+    keyarray_config.akscfg 	= 1;
+    keyarray_config.blen 	= 0; // 0x11;
+    keyarray_config.tchthr 	= 45; // 20;
+    keyarray_config.tchdi 	= 4; // 10;
+#else
     keyarray_config.ctrl = 0;
     keyarray_config.xorigin = 0;
     keyarray_config.yorigin = 0;
@@ -353,7 +434,8 @@ void qt_KeyArray_Init(void)
     keyarray_config.blen = 0;
     keyarray_config.tchthr = 0;
     keyarray_config.tchdi = 0;
-    keyarray_config.reserved[0] = 0;
+#endif
+	keyarray_config.reserved[0] = 0;
     keyarray_config.reserved[1] = 0;
 
     if (write_keyarray_config(0, keyarray_config) != CFG_WRITE_OK)
@@ -433,14 +515,24 @@ void qt_Grip_Face_Suppression_Config_Init(void)
     gripfacesuppression_config.ctrl = 7;		//-> disable PALM bit
     gripfacesuppression_config.xlogrip = 0;
     gripfacesuppression_config.xhigrip = 0;
-    gripfacesuppression_config.ylogrip = 0;
-    gripfacesuppression_config.yhigrip = 0;
     gripfacesuppression_config.maxtchs = 0;
     gripfacesuppression_config.reserved = 0;
-    gripfacesuppression_config.szthr1 = 80;
-    gripfacesuppression_config.szthr2 = 40;
-    gripfacesuppression_config.shpthr1 = 4;
-    gripfacesuppression_config.shpthr2 = 35;
+ #if defined(CONFIG_ARIES_LATONA)
+     gripfacesuppression_config.ylogrip = 5;
+     gripfacesuppression_config.yhigrip = 5;
+	 gripfacesuppression_config.szthr1 	= 30;
+	 gripfacesuppression_config.szthr2 	= 20;
+	 gripfacesuppression_config.shpthr1 = 4;
+	 gripfacesuppression_config.shpthr2 = 15;
+ #else
+     gripfacesuppression_config.ylogrip = 0;
+     gripfacesuppression_config.yhigrip = 0;
+	 gripfacesuppression_config.szthr1 	= 80;
+	 gripfacesuppression_config.szthr2 	= 40;
+	 gripfacesuppression_config.shpthr1 = 4;
+	 gripfacesuppression_config.shpthr2 = 35;
+ #endif
+
 
     gripfacesuppression_config.supextto = 10;//5;
 
@@ -478,16 +570,23 @@ void qt_Noise_Suppression_Config_Init(void)
     noise_suppression_config.gcafll = 0;
 
     noise_suppression_config.actvgcafvalid = 3;
-
+#if defined (CONFIG_ARIES_LATONA)
+	noise_suppression_config.noisethr = 35;
+	noise_suppression_config.freq[0] = 20;	
+	noise_suppression_config.freq[1] = 30;	
+	noise_suppression_config.freq[2] = 35;	
+	noise_suppression_config.freq[3] = 45;	
+	noise_suppression_config.freq[4] = 55;	
+#else
 	noise_suppression_config.noisethr = 30; 	//35;
-
+	noise_suppression_config.freq[0] = 29;	//5;	// 6;//10;
+	noise_suppression_config.freq[1] = 34;	//15;	// 11;//15;
+	noise_suppression_config.freq[2] = 39;	//25;	//16;//20;
+	noise_suppression_config.freq[3] = 49;	//35;	// 19;//25;
+	noise_suppression_config.freq[4] = 58;	//45;	// 21;//30;
+#endif
 	noise_suppression_config.freqhopscale = 0;///1;
 
-    noise_suppression_config.freq[0] = 29; 	//5;	// 6;//10;
-    noise_suppression_config.freq[1] = 34;	//15;	// 11;//15;
-    noise_suppression_config.freq[2] = 39;	//25;	//16;//20;
-    noise_suppression_config.freq[3] = 49;	//35;	// 19;//25;
-    noise_suppression_config.freq[4] = 58;	//45;	// 21;//30;
     
     noise_suppression_config.idlegcafvalid = 3;
 
@@ -649,14 +748,18 @@ void qt_Two_touch_Gesture_Config_Init(void)
 void qt_CTE_Config_Init(void)
 {
     /* Set CTE config */
-    cte_config.ctrl = 1;
+
     cte_config.cmd = 0;	
+#if defined(CONFIG_ARIES_LATONA)
+    cte_config.ctrl = 0;
+    cte_config.mode = 2;
+#else
+    cte_config.ctrl = 1;
     cte_config.mode = 3;
-	
+#endif
     cte_config.idlegcafdepth = 16;///4;
     cte_config.actvgcafdepth = 63;	//8;
-
-		cte_config.voltage = 0x3c;
+	cte_config.voltage = 0x3c;
 
     /* Write CTE config to chip. */
     if (get_object_address(SPT_CTECONFIG_T28, 0) != OBJECT_NOT_FOUND)
@@ -2601,7 +2704,11 @@ void check_chip_calibration(unsigned char one_touch_input_flag)
 #endif
 			}
 //Org of Dan			else if((tch_ch + CAL_THR /*10*/ ) <= atch_ch)
+#if defined(CONFIG_ARIES_LATONA)
+			else if(atch_ch >= 6)
+#else
 			else if(atch_ch >= 8)		//jwlee add 0325
+#endif
 			{
 #if 1
 				printk(KERN_DEBUG "[TSP] calibration was bad\n");
@@ -2786,6 +2893,65 @@ void TSP_forced_release_forOKkey(void)
 
 EXPORT_SYMBOL(TSP_forced_release_forOKkey);
 
+#if defined(__SUPPORT_TOUCH_KEY__)
+void process_key_event(uint8_t qt_msg)
+{
+	int i;
+	int press=0;
+	int keycode=0;
+	int x1,y1,x2,y2;
+	int st_old, st_new;
+
+	#if 0
+	if(!apollo_use_touch_key)
+		{
+		printk("[TSP] touch key is disabled.\n");
+		return;
+		}
+	#endif
+
+	// check each key status ////////////////
+	for(i=0; i<touchkey_size; i++)
+		{
+		st_old = touchkey_status[i];
+		st_new = (qt_msg>>i) & 0x1;  // 1 = pressed, 0 = released
+		keycode = ((int*)qt602240->input_dev->keycode)[i];
+
+	#if defined(__KEYPAD_REMOVE_TOUCH_KEY_INTERFERENCE__)
+		// ignore press event while Navi-keys presssed
+		if(check_press_key_interfered() && (1 == st_new))
+			continue;
+	#endif
+
+		touchkey_status[i] = st_new;		// save status
+
+		#if 0
+		if(disable_two_keys)
+			{
+			if(keycode==TOUCH_BACK || keycode==TOUCH_MENU)
+				continue;
+			else
+				keycode = (keycode==TOUCH_HOME)?TOUCH_MENU:TOUCH_BACK;
+			}
+		#endif
+
+		if(st_new > st_old)
+			{
+			// press event
+			printk("[TSP] press keycode: %4d, keypress: %4d\n", keycode, 1); 
+			input_report_key(qt602240->input_dev, keycode, 1);
+			}
+		else if(st_old > st_new)
+			{
+			// release event
+			printk("[TSP] relase keycode: %4d, keypress: %4d\n", keycode, 0); 
+			input_report_key(qt602240->input_dev, keycode, 0);
+			}
+		}
+
+}
+#endif
+
 void  get_message(struct work_struct * p)
 {
 	unsigned long x, y;
@@ -2858,6 +3024,24 @@ void  get_message(struct work_struct * p)
 //						calibrate_chip();
 				}
 			}	
+
+#if defined(__SUPPORT_TOUCH_KEY__)
+				/* Touch key event */
+			else if(quantum_msg[0] == 12)
+				{
+#if 1
+				printk("[TSP] Key Array obj msg1:0x%x\n", quantum_msg[1]);
+				printk("[TSP] Key Array obj msg2:0x%x\n", quantum_msg[2]);
+#endif
+				process_key_event(quantum_msg[2]);
+
+				if(readl(gpio_pend_mask_mem)&(0x1<<5))
+					writel(readl(gpio_pend_mask_mem)|(0x1<<5), gpio_pend_mask_mem); 
+				s3c_gpio_cfgpin(GPIO_TOUCH_INT, S3C_GPIO_SFN(0xf));
+				enable_irq(qt602240->client->irq);
+				return ;
+				}
+#endif //defined(__SUPPORT_TOUCH_KEY__)
 			
 			if(quantum_msg[0] < 2  || quantum_msg[0] >= 12) {
 			
@@ -3044,15 +3228,15 @@ void  get_message(struct work_struct * p)
 				input_mt_sync(qt602240->input_dev);
 				
 	//			amplitude++;
-		//		printk("[TSP]%s x=%3d, y=%3d\n",__FUNCTION__, fingerInfo[i].x, fingerInfo[i].y);
-			//	printk("ID[%d]= %s", (fingerInfo[i].size_id>>8), (fingerInfo[i].pressure == 0)?"Up ":"" );
+	//			printk("[TSP]%s x=%3d, y=%3d\n",__FUNCTION__, fingerInfo[i].x, fingerInfo[i].y);
+	//			printk("ID[%d]= %s", (fingerInfo[i].size_id>>8), (fingerInfo[i].pressure == 0)?"Up ":"" );
 	
 				if ( fingerInfo[i].pressure == 0 ) fingerInfo[i].pressure= -1;
 				else if( fingerInfo[i].pressure > 0 ) one_touch_input_flag++;//hugh 0312
 			}
 			input_sync(qt602240->input_dev);
-		//	printk("\n");
-		//	printk("##### Multi-Touch Event[%d] Done!\n", amplitude );
+//			printk("\n");
+//			printk("##### Multi-Touch Event[%d] Done!\n", amplitude );
 		}
 		nPrevID= id;
 #else
@@ -3370,6 +3554,7 @@ int qt602240_probe(struct i2c_client *client,
 {
 	int ret;	
 	int i;
+	int key;
 
 	qt602240->client = client;
 	qt602240->client->irq = IRQ_TOUCH_INT;
@@ -3410,6 +3595,18 @@ int qt602240_probe(struct i2c_client *client,
 	input_set_abs_params(qt602240->input_dev, ABS_MT_TOUCH_MAJOR, 0, 255, 0, 0);
 	input_set_abs_params(qt602240->input_dev, ABS_MT_WIDTH_MAJOR, 0, 30, 0, 0);
 #endif	
+
+#if defined(__SUPPORT_TOUCH_KEY__)
+	//Touch keys
+	qt602240->input_dev->keycode = touchkey_keycodes_2;
+
+	for(key = 0; key < touchkey_size; key++)
+		input_set_capability(qt602240->input_dev, EV_KEY, ((int*)qt602240->input_dev->keycode)[key]);
+
+	// for touch key
+	for(key = 0; key < MAX_KEYS; key++)
+		touchkey_status[key] = TK_STATUS_RELEASE;
+#endif //defined(__SUPPORT_TOUCH_KEY__)
 
 	ret = input_register_device(qt602240->input_dev);
 	if (ret) {
@@ -3563,6 +3760,7 @@ static int qt602240_early_suspend(struct early_suspend *h)
 	}
 
 #ifdef _SUPPORT_MULTITOUCH_
+	TSP_forced_release_forOKkey();
 	for (i=0; i<MAX_USING_FINGER_NUM ; i++){
 		fingerInfo[i].pressure = -1;
 		qt_touch_num_state[i]=0;
@@ -3582,6 +3780,11 @@ static int qt602240_early_suspend(struct early_suspend *h)
 	s3c_gpio_cfgpin(GPIO_TOUCH_EN, S3C_GPIO_OUTPUT);
 	s3c_gpio_setpull(GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
 #endif
+
+#if defined(CONFIG_ARIES_LATONA)
+	touchkey_control(2); // LED OFF
+#endif
+
 	LEAVE_FUNC;
 	return 0;
 }
@@ -3589,6 +3792,7 @@ static int qt602240_early_suspend(struct early_suspend *h)
 static int qt602240_late_resume(struct early_suspend *h)
 {
 	int ret,i;
+	int key;
 
 	ENTER_FUNC;
 
@@ -3610,6 +3814,12 @@ static int qt602240_late_resume(struct early_suspend *h)
 	}
 	//hugh 0312
 	good_check_flag=0;
+
+#if defined(__SUPPORT_TOUCH_KEY__)
+	// for touch key
+	for(key = 0; key < MAX_KEYS; key++)
+		touchkey_status[key] = TK_STATUS_RELEASE;
+#endif
 
 	msleep(20);
 	calibrate_chip();
@@ -3745,9 +3955,18 @@ static ssize_t firmware1_store(
 	return size;
 }
 
+#if defined(CONFIG_ARIES_LATONA)
+// #define MDNIE_TUNING
+extern int mDNIe_txtbuf_to_parsing2(void);
+#endif
+
 static ssize_t key_threshold_show(struct device *dev, struct device_attribute *attr, char *buf)
 {	
+#ifdef MDNIE_TUNING
+	return sprintf(buf, "mdnie : %d\n",mDNIe_txtbuf_to_parsing2());
+#else
 	return sprintf(buf, "%d\n", touchscreen_config.tchthr);
+#endif
 }
 
 static ssize_t key_threshold_store(
@@ -4158,6 +4377,69 @@ static ssize_t setup_store(
 {
 	return size;
 }
+
+#if defined(CONFIG_ARIES_LATONA)
+
+static int touchkey_control(int data)
+{
+	if(data == 1) 
+	{
+		// ON
+		printk("[%s] LED Enable\n", __func__);	
+	}
+	else if(data == 2)	
+	{	
+		// OFF
+		data = 0; 
+		printk("[%s] LED Disable\n", __func__);	
+
+	}
+	else
+	{
+		// Error
+		printk("[%s] ERROR : parameter value = %d\n", __func__, data);
+		return -1;
+	}
+
+	if (gpio_is_valid(GPIO_LED1_EN)) 
+	{
+			if (gpio_request(GPIO_LED1_EN, "GPJ3"))
+					printk("Failed to request GPIO_LED1_EN!\n");
+			
+			s3c_gpio_cfgpin(GPIO_LED1_EN, S3C_GPIO_OUTPUT);
+			gpio_direction_output(GPIO_LED1_EN, (int)data);
+	}
+	s3c_gpio_setpull(GPIO_LED1_EN, S3C_GPIO_PULL_NONE);
+	gpio_free(GPIO_LED1_EN);
+	
+	if (gpio_is_valid(GPIO_LED2_EN)) 
+	{
+			if (gpio_request(GPIO_LED2_EN, "GPJ3"))
+					printk("Failed to request GPIO_LED1_EN!\n");
+			
+			s3c_gpio_cfgpin(GPIO_LED2_EN, S3C_GPIO_OUTPUT);
+			gpio_direction_output(GPIO_LED2_EN, (int)data);
+	}
+	s3c_gpio_setpull(GPIO_LED2_EN, S3C_GPIO_PULL_NONE);
+	gpio_free(GPIO_LED2_EN);
+
+	return 1;
+
+}
+static ssize_t touchkey_led_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	u8 data;
+	
+	sscanf(buf, "%d", &data);
+
+	touchkey_control(data);
+
+	return size;
+}
+
+static DEVICE_ATTR(brightness, S_IRUGO | S_IWUGO, NULL, touchkey_led_store);
+#endif
+
 
 static DEVICE_ATTR(gpio, S_IRUGO | S_IWUSR, gpio_show, gpio_store);
 static DEVICE_ATTR(i2c, S_IRUGO | S_IWUSR, i2c_show, i2c_store);
@@ -5217,6 +5499,26 @@ static ssize_t set_refer4_mode_show(struct device *dev, struct device_attribute 
 	return sprintf(buf, "%u\n", qt_refrence);	
 }
 
+#if defined(CONFIG_ARIES_LATONA)
+static ssize_t set_refer5_mode_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    unsigned char status;
+    uint16_t qt_refrence=0;
+
+	status = read_dbg_data(QT_REFERENCE_MODE, test_node[5],&qt_refrence);
+	return sprintf(buf, "%u\n", qt_refrence);	
+}
+
+static ssize_t set_refer6_mode_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    unsigned char status;
+    uint16_t qt_refrence=0;
+
+	status = read_dbg_data(QT_REFERENCE_MODE, test_node[6],&qt_refrence);
+	return sprintf(buf, "%u\n", qt_refrence);	
+}
+#endif
+
 static ssize_t set_delta0_mode_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
     unsigned char status;
@@ -5292,6 +5594,39 @@ static ssize_t set_delta4_mode_show(struct device *dev, struct device_attribute 
 	}
 }
 
+#if defined(CONFIG_ARIES_LATONA)
+static ssize_t set_delta5_mode_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    unsigned char status;
+    uint16_t qt_delta=0;
+
+    status = read_dbg_data(QT_DELTA_MODE, test_node[5],&qt_delta);
+	if(qt_delta < 32767){
+		return sprintf(buf, "%u\n", qt_delta);	
+	   }
+	else	{
+			qt_delta = 65535 - qt_delta;
+		return sprintf(buf, "-%u\n", qt_delta);	
+	}
+}
+
+static ssize_t set_delta6_mode_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    unsigned char status;
+    uint16_t qt_delta=0;
+
+    status = read_dbg_data(QT_DELTA_MODE, test_node[6],&qt_delta);
+	if(qt_delta < 32767){
+		return sprintf(buf, "%u\n", qt_delta);	
+	   }
+	else	{
+			qt_delta = 65535 - qt_delta;
+		return sprintf(buf, "-%u\n", qt_delta);	
+	}
+}
+#endif
+
+
 static ssize_t set_threshold_mode_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	return sprintf(buf, "%u\n", touchscreen_config.tchthr);	
@@ -5308,6 +5643,12 @@ static DEVICE_ATTR(set_refer3, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, set_refer3
 static DEVICE_ATTR(set_delta3, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, set_delta3_mode_show, NULL);
 static DEVICE_ATTR(set_refer4, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, set_refer4_mode_show, NULL);
 static DEVICE_ATTR(set_delta4, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, set_delta4_mode_show, NULL);
+#if defined(CONFIG_ARIES_LATONA)
+static DEVICE_ATTR(set_refer5, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, set_refer5_mode_show, NULL);
+static DEVICE_ATTR(set_delta5, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, set_delta5_mode_show, NULL);
+static DEVICE_ATTR(set_refer6, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, set_refer6_mode_show, NULL);
+static DEVICE_ATTR(set_delta6, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, set_delta6_mode_show, NULL);
+#endif
 static DEVICE_ATTR(set_threshould, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, set_threshold_mode_show, NULL);
 #endif /* ENABLE_NOISE_TEST_MODE */
 
@@ -5477,6 +5818,15 @@ static ssize_t qt602240_config_mode_store(struct device *dev,	struct device_attr
 static DEVICE_ATTR(config_mode, S_IRUGO | S_IWUSR | S_IWOTH | S_IXOTH, qt602240_config_mode_show, qt602240_config_mode_store);
 #endif
 /*------------------------------ for tunning ATmel - end ----------------------------*/
+
+#if defined(CONFIG_ARIES_LATONA)
+static struct miscdevice touchkey_update_device = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "melfas_touchkey",
+	.fops = NULL,
+};
+#endif
+
 int __init qt602240_init(void)
 {
 	int ret;
@@ -5618,6 +5968,16 @@ int __init qt602240_init(void)
 		printk("Failed to create device file(%s)!\n", dev_attr_set_refer4.attr.name);
 	if (device_create_file(qt602240_noise_test, &dev_attr_set_delta4) < 0)
 		printk("Failed to create device file(%s)!\n", dev_attr_set_delta4.attr.name);	
+	#if defined(CONFIG_ARIES_LATONA)
+	if (device_create_file(qt602240_noise_test, &dev_attr_set_refer5)< 0)
+		printk("Failed to create device file(%s)!\n", dev_attr_set_refer5.attr.name);
+	if (device_create_file(qt602240_noise_test, &dev_attr_set_delta5) < 0)
+		printk("Failed to create device file(%s)!\n", dev_attr_set_delta5.attr.name);
+	if (device_create_file(qt602240_noise_test, &dev_attr_set_refer6)< 0)
+		printk("Failed to create device file(%s)!\n", dev_attr_set_refer6.attr.name);
+	if (device_create_file(qt602240_noise_test, &dev_attr_set_delta6) < 0)
+		printk("Failed to create device file(%s)!\n", dev_attr_set_delta6.attr.name);
+	#endif
 	if (device_create_file(qt602240_noise_test, &dev_attr_set_threshould) < 0)
 		printk("Failed to create device file(%s)!\n", dev_attr_set_threshould.attr.name);
 #endif
@@ -5641,6 +6001,22 @@ int __init qt602240_init(void)
 		printk("Failed to create device file(%s)!\n", dev_attr_set_qt_firm_version_read.attr.name);
 #endif
 	/*------------------------------	 AT COMMAND TEST 		---------------------*/
+
+#if defined(CONFIG_ARIES_LATONA)
+	ret = misc_register(&touchkey_update_device);
+	if (ret) {
+		printk("%s misc_register fail\n", __FUNCTION__);
+	}
+
+	if (device_create_file
+	    (touchkey_update_device.this_device, &dev_attr_brightness) < 0) {
+		printk("%s device_create_file fail dev_attr_touch_update\n",
+		       __FUNCTION__);
+		pr_err("Failed to create device file(%s)!\n",
+		       dev_attr_brightness.attr.name);
+	}			
+#endif
+
 
 #ifdef QT_STYLUS_ENABLE
 	qt_stylus = device_create(touch_class, NULL, 0, NULL, "qt_stylus");

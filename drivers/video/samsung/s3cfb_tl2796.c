@@ -30,6 +30,9 @@
 
 #include "s3cfb.h"
 #include "s6e63m0.h"
+#if defined(CONFIG_ARIES_LATONA)
+#include "s3cfb_mdnie.h"
+#endif
 
 #define DIM_BL	20
 #define MIN_BL	30
@@ -40,6 +43,17 @@
 
 #define GAMMASET_CONTROL //for 1.9/2.2 gamma control from platform
 
+#if defined(CONFIG_ARIES_LATONA)
+#define MAX_BRIGHTNESS_LEVEL 255
+#define LOW_BRIGHTNESS_LEVEL 30
+
+#define MAX_BACKLIGHT_VALUE 255 // 192 // If you change this, You should change MAX_BACKLIGHT_VALUE at sesor/optical/gp2a.c
+#define LOW_BACKLIGHT_VALUE_SONY 34 // 30
+#define DIM_BACKLIGHT_VALUE_SONY 20 // 12
+
+extern unsigned int HWREV;
+int g_lcd_type = 1; // default : Sony Panel
+#endif
 
 /*********** for debug **********************************************************/
 #if 0 
@@ -65,6 +79,15 @@ static int on_19gamma = 0;
 
 static DEFINE_MUTEX(spi_use);
 
+#if defined(CONFIG_ARIES_LATONA)
+#define PWM_REG_OFFSET		1
+static unsigned short brightness_setting_table[] = {
+	0x051, 0x17f,
+	ENDDEF, 0x0000                                
+
+};
+#endif
+
 struct s5p_lcd {
 	struct spi_device *g_spi;
 	struct lcd_device *lcd_dev;
@@ -77,7 +100,12 @@ struct device *switch_gammaset_dev;
 #endif
 
 #ifdef CONFIG_FB_S3C_TL2796_ACL
+
+#if defined(CONFIG_ARIES_LATONA)
+int acl_enable = 0;
+#else
 static int acl_enable = 0;
+#endif
 static int cur_acl = 0;
 
 struct class *acl_class;
@@ -266,8 +294,20 @@ static struct s3cfb_lcd s6e63m0 = {
 	.p_width = 52,
 	.p_height = 86,
 	.bpp = 24,
+#if defined(CONFIG_ARIES_LATONA)
+	.freq = 60,  // default : Sony Panel
+	.timing = {
+		.h_fp = 10, // 16,
+		.h_bp = 20, // 16,
+		.h_sw = 10, // 2,
+		.v_fp = 6, // 28,
+		.v_fpe = 1,
+		.v_bp = 8, // 1,
+		.v_bpe = 1,
+		.v_sw = 2,
+	},
+#else
 	.freq = 60,
-	
 	.timing = {
 		.h_fp = 16,
 		.h_bp = 16,
@@ -278,7 +318,7 @@ static struct s3cfb_lcd s6e63m0 = {
 		.v_bpe = 1,
 		.v_sw = 2,
 	},
-
+#endif	
 	.polarity = {
 		.rise_vclk = 1,
 		.inv_hsync = 1,
@@ -353,10 +393,173 @@ static void SetLDIEnabledFlag(int OnOff)
 	ldi_enable = OnOff;
 }
 
+#if defined(CONFIG_ARIES_LATONA)
+extern Lcd_mDNIe_UI current_mDNIe_UI;
+
+void on_cabc(void)
+{
+	if(acl_enable == 0)
+		return;
+		
+	gprintk(" mDNIe_MODE = %d\n", current_mDNIe_UI); 
+		
+	// ACL ON
+	switch(current_mDNIe_UI)
+	{
+		case mDNIe_UI_MODE:		
+			 s6e63m0_panel_send_sequence(nt35580_SEQ_CABC_UI);
+			 break;
+		case mDNIe_VIDEO_MODE:
+		case mDNIe_VIDEO_WARM_MODE:
+		case mDNIe_VIDEO_COLD_MODE:
+		case mDNIe_CAMERA_MODE:
+			 s6e63m0_panel_send_sequence(nt35580_SEQ_CABC_VIDEO);
+			 break;
+		case mDNIe_NAVI:
+			 s6e63m0_panel_send_sequence(nt35580_SEQ_CABC_IMAGE);
+			 break;
+		default:
+			 s6e63m0_panel_send_sequence(nt35580_SEQ_CABC_UI);
+			 break;
+	}
+}
+
+void off_cabc(void)
+{
+	// ACL OFF
+	s6e63m0_panel_send_sequence(nt35580_SEQ_CABC_OFF);
+}
+
+#define CABC_TEST
+#ifdef CABC_TEST
+
+static int cabc_mode = 0;
+
+static ssize_t test_cabc_show(struct device *dev,
+        struct device_attribute *attr, char *buf)
+{
+	gprintk("[%s] cabc_mode = %d\n",__func__, cabc_mode);
+
+	return sprintf(buf,"%u\n", cabc_mode);
+}
+static ssize_t test_cabc_store(struct device *dev,
+        struct device_attribute *attr, const char *buf, size_t size)
+{
+	int value;
+	
+    sscanf(buf, "%d", &value);
+
+	switch(value)
+	{
+		case 1:
+			s6e63m0_panel_send_sequence(nt35580_SEQ_CABC_UI);	cabc_mode = 1;	printk("[%s] set CABC_UI\n", __func__);
+			break;
+		case 2:
+			s6e63m0_panel_send_sequence(nt35580_SEQ_CABC_IMAGE); cabc_mode = 2;	printk("[%s] set CABC_IMAGE\n", __func__);
+			break;
+		case 3:
+			s6e63m0_panel_send_sequence(nt35580_SEQ_CABC_VIDEO); cabc_mode = 3;	printk("[%s] set CABC_VIDEO\n", __func__);
+		default:
+			s6e63m0_panel_send_sequence(nt35580_SEQ_CABC_OFF); cabc_mode = 0;	printk("[%s] set CABC_OFF\n", __func__);
+			break;
+	}
+
+	return size;
+}
+
+static DEVICE_ATTR(test_cabc,0666, test_cabc_show, test_cabc_store);
+#endif
+
+static int tl2796_check_LcdPanel(void)
+{
+	int err;
+	int lcd_id1 = -1;
+	int lcd_id2 = -1;
+
+	printk("=================[%s] HWREV=0x%d\n", HWREV); 
+
+	if(HWREV >= 2)
+	{
+		// Rev07 ~
+		err = gpio_request(GPIO_LCD_ID_NEW, "LCD_ID");
+
+		if (err) {
+			  printk(KERN_ERR "failed to request LCD_ID1 \n");
+			  return -1;
+		}
+		err = gpio_request(GPIO_LCD_ID2_NEW, "LCD_ID2");
+
+		if (err) {
+			  printk(KERN_ERR "failed to request LCD_ID2 \n");
+			  return -1;
+		}
+
+		gpio_direction_input(GPIO_LCD_ID_NEW);
+		gpio_direction_input(GPIO_LCD_ID2_NEW);
+
+		lcd_id1 = gpio_get_value(GPIO_LCD_ID_NEW);
+		lcd_id2 = gpio_get_value(GPIO_LCD_ID2_NEW);
+
+		printk("=================lcd_id=0x%d, lcd_id2=0x%d\n", lcd_id1, lcd_id2);
+
+		gpio_free(GPIO_LCD_ID_NEW);
+		gpio_free(GPIO_LCD_ID2_NEW);		
+	}
+	else
+	{	
+		// ~ Rev06
+		err = gpio_request(GPIO_LCD_ID, "LCD_ID");
+
+		if (err) {
+			  printk(KERN_ERR "failed to request LCD_ID1 \n");
+			  return -1;
+		}
+		err = gpio_request(GPIO_LCD_ID2, "LCD_ID2");
+
+		if (err) {
+			  printk(KERN_ERR "failed to request LCD_ID2 \n");
+			  return -1;
+		}
+
+		gpio_direction_input(GPIO_LCD_ID);
+		gpio_direction_input(GPIO_LCD_ID2);
+
+		lcd_id1 = gpio_get_value(GPIO_LCD_ID);
+		lcd_id2 = gpio_get_value(GPIO_LCD_ID2);
+
+		gpio_free(GPIO_LCD_ID);
+		gpio_free(GPIO_LCD_ID2);
+	}
+
+	g_lcd_type = (lcd_id1 | lcd_id2);
+
+	return g_lcd_type;
+}
+#endif
+
 void tl2796_ldi_init(void)
 {
+#if defined(CONFIG_ARIES_LATONA)
+	if(g_lcd_type == 0)
+	{
+		// Hydis Panel
+		printk("=======Hydis Panel==========\n"); 
+	    s6e63m0_panel_send_sequence(nt35510_SEQ_SETTING);
+		s6e63m0_panel_send_sequence(s6e63m0_SEQ_STANDBY_OFF);
+		s6e63m0_panel_send_sequence(s6e63m0_SEQ_DISPLAY_ON);	
+	}
+	else
+	{
+		// Sony Panel
+		printk("=======Sony Panel==========\n"); 
+		msleep(150);  // recommend by Sony-LCD
+	    s6e63m0_panel_send_sequence(nt35580_SEQ_SETTING);
+		s6e63m0_panel_send_sequence(s6e63m0_SEQ_DISPLAY_ON);			
+	}
+#else
 	s6e63m0_panel_send_sequence(s6e63m0_SEQ_SETTING);
 	s6e63m0_panel_send_sequence(s6e63m0_SEQ_STANDBY_OFF);
+#endif
 
 	SetLDIEnabledFlag(1);
 	printk(KERN_DEBUG "LDI enable ok\n");
@@ -370,8 +573,13 @@ void tl2796_ldi_enable(void)
 
 void tl2796_ldi_disable(void)
 {
+#if defined(CONFIG_ARIES_LATONA)
+	s6e63m0_panel_send_sequence(s6e63m0_SEQ_DISPLAY_OFF);
+	s6e63m0_panel_send_sequence(nt35580_SEQ_SLEEP_IN);
+#else
 	s6e63m0_panel_send_sequence(s6e63m0_SEQ_STANDBY_ON);
 	s6e63m0_panel_send_sequence(s6e63m0_SEQ_DISPLAY_OFF);
+#endif
 
 	SetLDIEnabledFlag(0);
 	printk(KERN_DEBUG "LDI disable ok\n");
@@ -381,6 +589,12 @@ void tl2796_ldi_disable(void)
 void s3cfb_set_lcd_info(struct s3cfb_global *ctrl)
 {
 	s6e63m0.init_ldi = NULL;
+#if defined(CONFIG_ARIES_LATONA)
+	g_lcd_type = tl2796_check_LcdPanel();
+	if(g_lcd_type == 0)
+		s6e63m0.freq = 40;   // Hydis Panel
+		
+#endif
 	ctrl->lcd = &s6e63m0;
 }
 
@@ -527,6 +741,10 @@ static ssize_t aclset_file_cmd_store(struct device *dev, struct device_attribute
 		acl_enable = value;
 
 		if (acl_enable == 1)	{
+#if defined(CONFIG_ARIES_LATONA)
+			// ACL ON
+			on_cabc();
+#else
 			s6e63m0_panel_send_sequence(acl_cutoff_init);
 			msleep(20);
 
@@ -578,11 +796,16 @@ static ssize_t aclset_file_cmd_store(struct device *dev, struct device_attribute
 					cur_acl = 50;
 					printk(" ACL_cutoff_set Percentage : 50!!\n");
 			}
+#endif
 		}
 #endif
 		else	{
 			//ACL Off
+#if defined(CONFIG_ARIES_LATONA)
+			off_cabc();
+#else
 			s6e63m0_panel_send_sequence(ACL_cutoff_set[0]); //ACL OFF
+#endif
 			cur_acl  = 0;
 			printk(" ACL_cutoff_set Percentage : 0!!\n");
 		}
@@ -624,7 +847,41 @@ static void off_display(void)
 	backlight_level = BACKLIGHT_LEVEL_OFF;
 	current_gamma_value = -1;
 }
+#if defined(CONFIG_ARIES_LATONA)
+static int get_pwm_value_from_bl(int level)
+{
+	int tune_value;
 
+	// SMD LCD
+	if(level > MAX_BRIGHTNESS_LEVEL)
+		level = MAX_BRIGHTNESS_LEVEL;
+
+	if(level >= LOW_BRIGHTNESS_LEVEL)
+		tune_value = (level - LOW_BRIGHTNESS_LEVEL) * (MAX_BACKLIGHT_VALUE-LOW_BACKLIGHT_VALUE_SONY) / (MAX_BRIGHTNESS_LEVEL-LOW_BRIGHTNESS_LEVEL) + LOW_BACKLIGHT_VALUE_SONY;
+	else if(level > 0)
+		tune_value = DIM_BACKLIGHT_VALUE_SONY;
+	else
+		tune_value = level;
+	
+	if(tune_value > MAX_BACKLIGHT_VALUE)
+		tune_value = MAX_BACKLIGHT_VALUE;			// led_val must be less than or equal to MAX_BACKLIGHT_VALUE
+
+	if(level && !tune_value)
+		tune_value = 1;
+
+	return tune_value;
+}
+
+static void update_brightness(int level)
+{
+	brightness_setting_table[PWM_REG_OFFSET] = 0x100 | (level & 0xff);
+
+	printk("(%d)\n", brightness_setting_table[PWM_REG_OFFSET]&0xff);
+	s6e63m0_panel_send_sequence(brightness_setting_table);	
+
+}
+
+#else
 static int get_gamma_value_from_bl(int bl)
 {
 	int gamma_value = 0;
@@ -651,6 +908,8 @@ static void update_brightness(int gamma)
 	s6e63m0_panel_send_sequence(gamma_update); //gamma update
 }
 
+#endif
+
 static int s5p_bl_update_status(struct backlight_device* bd)
 {
 	int bl = bd->props.brightness;
@@ -676,8 +935,12 @@ static int s5p_bl_update_status(struct backlight_device* bd)
 		gprintk("Update status brightness[0~255]:(%d) - LCD OFF \n", bl);
 		return 0;
 	}	
-
+	
+#if defined(CONFIG_ARIES_LATONA)
+	gamma_value = get_pwm_value_from_bl(bl);
+#else
 	gamma_value = get_gamma_value_from_bl(bl);
+#endif
 
 	bd_brightness = bd->props.brightness;
 	backlight_level = level;
@@ -691,12 +954,23 @@ static int s5p_bl_update_status(struct backlight_device* bd)
 		return 0;
 
 #ifdef CONFIG_FB_S3C_MDNIE_TUNINGMODE_FOR_BACKLIGHT
+
+#if defined(CONFIG_ARIES_LATONA)
+	if ((pre_val==1) && (gamma_value < MAX_BACKLIGHT_VALUE) &&(autobrightness_mode)) 	{
+#else
 	if ((pre_val==1) && (gamma_value < 24) &&(autobrightness_mode))		{
+#endif
 		mDNIe_Mode_set_for_backlight(pmDNIe_Gamma_set[2]);
 		gprintk("s5p_bl_update_status - pmDNIe_Gamma_set[2]\n" );
 		pre_val = -1;
 	}
 #endif
+
+#if defined(CONFIG_ARIES_LATONA)
+    printk("[bl]%d", bl);
+	update_brightness(gamma_value);	
+	gprintk("#################backlight end##########################\n");
+#else
 
 	switch (level)	{
 		case BACKLIGHT_LEVEL_DIMMING:
@@ -804,10 +1078,13 @@ static int s5p_bl_update_status(struct backlight_device* bd)
 			break;
 	}
 
+#endif // #if defined(CONFIG_ARIES_LATONA)
+
 	current_gamma_value = gamma_value;
 
 	return 0;
 }
+
 
 static int s5p_bl_get_brightness(struct backlight_device* bd)
 {
@@ -858,6 +1135,10 @@ static int __init tl2796_probe(struct spi_device *spi)
 
 	if (device_create_file(switch_aclset_dev, &dev_attr_aclset_file_cmd) < 0)
 		pr_err("Failed to create device file(%s)!\n", dev_attr_aclset_file_cmd.attr.name);
+#if defined(CONFIG_ARIES_LATONA)
+	if (device_create_file(switch_aclset_dev, &dev_attr_test_cabc) < 0)
+		pr_err("Failed to create device file(%s)!\n", dev_attr_test_cabc.attr.name);	
+#endif
 #endif	
 
 #ifdef CONFIG_FB_S3C_MDNIE

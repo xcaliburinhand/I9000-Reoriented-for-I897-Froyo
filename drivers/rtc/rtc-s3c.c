@@ -604,7 +604,7 @@ static int __devinit s3c_rtc_probe(struct platform_device *pdev)
 	struct rtc_device *rtc;
 	struct resource *res;
 	unsigned char bcd_tmp, bcd_loop;
-	int ret;
+	int ret, year, year100;
 	struct rtc_time tm;
 
 	pr_debug("%s: probe=%p\n", __func__, pdev);
@@ -698,7 +698,28 @@ static int __devinit s3c_rtc_probe(struct platform_device *pdev)
 		tm.tm_year = 110;
 	}
 #endif
-	s3c_rtc_settime(&pdev->dev, &tm);	//update from pmic
+
+	/*update rtc time from pmic*/
+	year = tm.tm_year;
+	do
+	{
+		writeb(bin2bcd(tm.tm_sec),  s3c_rtc_base + S3C2410_RTCSEC); 
+		writeb(bin2bcd(tm.tm_min),  s3c_rtc_base + S3C2410_RTCMIN); 
+		writeb(bin2bcd(tm.tm_hour), s3c_rtc_base + S3C2410_RTCHOUR); 
+		writeb(bin2bcd(tm.tm_mday), s3c_rtc_base + S3C2410_RTCDATE); 
+		writeb(bin2bcd(tm.tm_mon+1), s3c_rtc_base + S3C2410_RTCMON); 
+
+#if defined(CONFIG_CPU_S5PV210)
+		year100 = year/100;
+		year = year%100;
+		year = bin2bcd(year) | ((bin2bcd(year100)) << 8);
+		year = (0x00000fff & year);
+		writel(year, s3c_rtc_base + S3C2410_RTCYEAR);
+#else
+		writeb(bin2bcd(year), s3c_rtc_base + S3C2410_RTCYEAR);
+#endif
+
+	} while (bin2bcd(tm.tm_sec) > readb(s3c_rtc_base + S3C2410_RTCSEC));
 
 	/* check rtc time */
 	for (bcd_loop = S3C2410_RTCSEC; bcd_loop <= S3C2410_RTCYEAR;

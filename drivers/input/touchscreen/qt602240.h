@@ -5191,7 +5191,12 @@ typedef struct
 
 #if ENABLE_NOISE_TEST_MODE
 
+#if defined(CONFIG_ARIES_LATONA)
+#define TEST_POINT_NUM      7
+#else
 #define TEST_POINT_NUM      5
+#endif
+
 typedef enum 
 {
     QT_PAGE_UP         = 0x01,

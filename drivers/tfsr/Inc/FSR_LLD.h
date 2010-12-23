@@ -1,18 +1,19 @@
 /**
- *   @mainpage   Flex Sector Remapper : RFS_3.0.0_b035_LinuStoreIII_1.2.0_b035_FSR_1.2.1p1_b129_RC
+ *   @mainpage   Flex Sector Remapper : LinuStoreIII_1.2.0_b038-FSR_1.2.1p1_b139_RTM
  *
- *   @section Intro
+ *   @section Intro Intro
  *       Flash Translation Layer for Flex-OneNAND and OneNAND
- *    
- *    @section  Copyright
- *---------------------------------------------------------------------------*
- *                                                                           *
- * Copyright (C) 2003-2010 Samsung Electronics                               *
- * This program is free software; you can redistribute it and/or modify      *
- * it under the terms of the GNU General Public License version 2 as         *
- * published by the Free Software Foundation.                                *
- *                                                                           *
- *---------------------------------------------------------------------------*
+ *   
+ *      
+ *
+ *     @MULTI_BEGIN@ @COPYRIGHT_GPL
+ *     @section Copyright COPYRIGHT_GPL
+ *            COPYRIGHT. SAMSUNG ELECTRONICS CO., LTD.
+ *                                    ALL RIGHTS RESERVED
+ *     This program is free software; you can redistribute it and/or modify it
+ *     under the terms of the GNU General Public License version 2 
+ *     as published by the Free Software Foundation.
+ *     @MULTI_END@
  *
  *     @section Description
  *
@@ -422,49 +423,49 @@ typedef struct
 /*****************************************************************************/
 /* LLD Return Values                                                         */
 /*****************************************************************************/
-#define     FSR_LLD_IOCTL_NOT_SUPPORT          FSR_RETURN_VALUE(0, 0x2, 0x0003, 0x0000)
-#define     FSR_LLD_INIT_BADBLOCK              FSR_RETURN_VALUE(0, 0x2, 0x0002, 0x0000)
-#define     FSR_LLD_INIT_GOODBLOCK             FSR_RETURN_VALUE(0, 0x2, 0x0001, 0x0000)
+#define     FSR_LLD_IOCTL_NOT_SUPPORT           FSR_RETURN_VALUE(0, 0x2, 0x0003, 0x0000)
+#define     FSR_LLD_INIT_BADBLOCK               FSR_RETURN_VALUE(0, 0x2, 0x0002, 0x0000)
+#define     FSR_LLD_INIT_GOODBLOCK              FSR_RETURN_VALUE(0, 0x2, 0x0001, 0x0000)
 
-#define     FSR_LLD_SUCCESS                    FSR_RETURN_VALUE(0, 0x2, 0x0000, 0x0000)
+#define     FSR_LLD_SUCCESS                     FSR_RETURN_VALUE(0, 0x2, 0x0000, 0x0000)
 
-#define     FSR_LLD_PREV_READ_ERROR            FSR_RETURN_VALUE(1, 0x2, 0x0001, 0x0000)
-#define     FSR_LLD_ALREADY_INITIALIZED        FSR_RETURN_VALUE(1, 0x2, 0x0003, 0x0000)
+#define     FSR_LLD_PREV_READ_ERROR             FSR_RETURN_VALUE(1, 0x2, 0x0001, 0x0000)
+#define     FSR_LLD_ALREADY_INITIALIZED         FSR_RETURN_VALUE(1, 0x2, 0x0003, 0x0000)
 
-#define     FSR_LLD_PREV_WRITE_ERROR           FSR_RETURN_VALUE(1, 0x2, 0x0004, 0x0000)
-#define     FSR_LLD_PREV_ERASE_ERROR           FSR_RETURN_VALUE(1, 0x2, 0x0005, 0x0000)
-#define     FSR_LLD_PREV_WR_PROTECT_ERROR      FSR_RETURN_VALUE(1, 0x2, 0x0006, 0x0000)
+#define     FSR_LLD_PREV_WRITE_ERROR            FSR_RETURN_VALUE(1, 0x2, 0x0004, 0x0000)
+#define     FSR_LLD_PREV_ERASE_ERROR            FSR_RETURN_VALUE(1, 0x2, 0x0005, 0x0000)
+#define     FSR_LLD_PREV_WR_PROTECT_ERROR       FSR_RETURN_VALUE(1, 0x2, 0x0006, 0x0000)
 
-#define     FSR_LLD_INVALID_PARAM              FSR_RETURN_VALUE(1, 0x2, 0x0007, 0x0000)
+#define     FSR_LLD_INVALID_PARAM               FSR_RETURN_VALUE(1, 0x2, 0x0007, 0x0000)
 
-#define     FSR_LLD_INIT_FAILURE               FSR_RETURN_VALUE(1, 0x2, 0x0008, 0x0000)
-#define     FSR_LLD_OPEN_FAILURE               FSR_RETURN_VALUE(1, 0x2, 0x0009, 0x0000)
+#define     FSR_LLD_INIT_FAILURE                FSR_RETURN_VALUE(1, 0x2, 0x0008, 0x0000)
+#define     FSR_LLD_OPEN_FAILURE                FSR_RETURN_VALUE(1, 0x2, 0x0009, 0x0000)
 
-#define     FSR_LLD_WR_PROTECT_ERROR           FSR_RETURN_VALUE(1, 0x2, 0x000A, 0x0000)
-#define     FSR_LLD_NO_UNLOCKED_BLK            FSR_RETURN_VALUE(1, 0x2, 0x000B, 0x0000)
+#define     FSR_LLD_WR_PROTECT_ERROR            FSR_RETURN_VALUE(1, 0x2, 0x000A, 0x0000)
+#define     FSR_LLD_NO_UNLOCKED_BLK             FSR_RETURN_VALUE(1, 0x2, 0x000B, 0x0000)
 
-#define     FSR_LLD_NO_RESPONSE                FSR_RETURN_VALUE(1, 0x2, 0x000C, 0x0000)
-#define     FSR_LLD_OAM_ACCESS_ERROR           FSR_RETURN_VALUE(1, 0x2, 0x000D, 0x0000)
-#define     FSR_LLD_PAM_ACCESS_ERROR           FSR_RETURN_VALUE(1, 0x2, 0x000E, 0x0000)
+#define     FSR_LLD_NO_RESPONSE                 FSR_RETURN_VALUE(1, 0x2, 0x000C, 0x0000)
+#define     FSR_LLD_OAM_ACCESS_ERROR            FSR_RETURN_VALUE(1, 0x2, 0x000D, 0x0000)
+#define     FSR_LLD_PAM_ACCESS_ERROR            FSR_RETURN_VALUE(1, 0x2, 0x000E, 0x0000)
 
-#define     FSR_LLD_UNLOCKED_BLK_NOT_EXIST     FSR_RETURN_VALUE(1, 0x2, 0x000F, 0x0000)
+#define     FSR_LLD_UNLOCKED_BLK_NOT_EXIST      FSR_RETURN_VALUE(1, 0x2, 0x000F, 0x0000)
 
 /* when do PI erase or program, PI block must be unlocked                    */
-#define     FSR_LLD_PI_PROGRAM_ERROR           FSR_RETURN_VALUE(1, 0x2, 0x0010, 0x0000)
-#define     FSR_LLD_PI_ERASE_ERROR             FSR_RETURN_VALUE(1, 0x2, 0x0011, 0x0000)
+#define     FSR_LLD_PI_PROGRAM_ERROR            FSR_RETURN_VALUE(1, 0x2, 0x0010, 0x0000)
+#define     FSR_LLD_PI_ERASE_ERROR              FSR_RETURN_VALUE(1, 0x2, 0x0011, 0x0000)
 
-#define     FSR_LLD_BLK_PROTECTION_ERROR       FSR_RETURN_VALUE(1, 0x2, 0x0012, 0x0000)
+#define     FSR_LLD_BLK_PROTECTION_ERROR        FSR_RETURN_VALUE(1, 0x2, 0x0012, 0x0000)
 
-#define     FSR_LLD_OTP_ALREADY_LOCKED         FSR_RETURN_VALUE(1, 0x2, 0x0013, 0x0000)
-#define     FSR_LLD_ALREADY_OPEN               FSR_RETURN_VALUE(1, 0X2, 0x0014, 0x0000)
-#define     FSR_LLD_MALLOC_FAIL                FSR_RETURN_VALUE(1, 0x2, 0x0015, 0x0000)
+#define     FSR_LLD_OTP_ALREADY_LOCKED          FSR_RETURN_VALUE(1, 0x2, 0x0013, 0x0000)
+#define     FSR_LLD_ALREADY_OPEN                FSR_RETURN_VALUE(1, 0X2, 0x0014, 0x0000)
+#define     FSR_LLD_MALLOC_FAIL                 FSR_RETURN_VALUE(1, 0x2, 0x0015, 0x0000)
 
-#define     FSR_LLD_INVALID_BLOCK_STATE        FSR_RETURN_VALUE(1, 0x2, 0x0016, 0x0000)
+#define     FSR_LLD_INVALID_BLOCK_STATE         FSR_RETURN_VALUE(1, 0x2, 0x0016, 0x0000)
 
-#define     FSR_LLD_PI_READ_ERROR              FSR_RETURN_VALUE(1, 0x2, 0x0017, 0x0000)
+#define     FSR_LLD_PI_READ_ERROR               FSR_RETURN_VALUE(1, 0x2, 0x0017, 0x0000)
 
-#define     FSR_LLD_PREV_1LV_READ_DISTURBANCE  FSR_RETURN_VALUE(1, 0x2, 0x0018, 0x0000)
-#define     FSR_LLD_PREV_2LV_READ_DISTURBANCE  FSR_RETURN_VALUE(1, 0x2, 0x0019, 0x0000)
+#define     FSR_LLD_PREV_1LV_READ_DISTURBANCE   FSR_RETURN_VALUE(1, 0x2, 0x0018, 0x0000)
+#define     FSR_LLD_PREV_2LV_READ_DISTURBANCE   FSR_RETURN_VALUE(1, 0x2, 0x0019, 0x0000)
 
 
 /*****************************************************************************/
@@ -474,112 +475,114 @@ typedef struct
 /* - FSR_LLD_PREV_READ_DISTURBANCE                                           */
 /* - FSR_LLD_PREV_READ_ERROR                                                 */
 /*****************************************************************************/
-#define     FSR_LLD_1STPLN_PREV_ERROR       (0x00000001)
-#define     FSR_LLD_1STPLN_CURR_ERROR       (0x00000002)
-#define     FSR_LLD_2NDPLN_PREV_ERROR       (0x00000004)
-#define     FSR_LLD_2NDPLN_CURR_ERROR       (0x00000008)
+#define     FSR_LLD_1STPLN_PREV_ERROR           (0x00000001)
+#define     FSR_LLD_1STPLN_CURR_ERROR           (0x00000002)
+#define     FSR_LLD_2NDPLN_PREV_ERROR           (0x00000004)
+#define     FSR_LLD_2NDPLN_CURR_ERROR           (0x00000008)
 
 /*****************************************************************************/
 /* Minor Return Values for Major return value of FSR_LLD_INIT_BADBLOCK       */
 /*****************************************************************************/
-#define     FSR_LLD_BAD_BLK_1STPLN          (0x00000001)
-#define     FSR_LLD_BAD_BLK_2NDPLN          (0x00000002)
+#define     FSR_LLD_BAD_BLK_1STPLN              (0x00000001)
+#define     FSR_LLD_BAD_BLK_2NDPLN              (0x00000002)
 
 /*****************************************************************************/
 /* LLD IO Ctrl Code                                                          */
 /*****************************************************************************/
-#define     FSR_LLD_IOCTL_PI_READ       FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x00,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_READ_ACCESS)
+#define     FSR_LLD_IOCTL_PI_READ               FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                               0x00,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_READ_ACCESS)
 
 /* FSR_LLD_IOCTL_PI_WRITE does folowing in sequence
  *                        first  erase PI block,
  *                        second program PI block,
  *                        then   update it
  */
-#define     FSR_LLD_IOCTL_PI_WRITE      FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x01,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_WRITE_ACCESS)
+#define     FSR_LLD_IOCTL_PI_WRITE              FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                               0x01,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_WRITE_ACCESS)
 
-#define     FSR_LLD_IOCTL_OTP_LOCK      FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x05,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_WRITE_ACCESS)
+#define     FSR_LLD_IOCTL_OTP_LOCK              FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                               0x05,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_WRITE_ACCESS)
 
-#define     FSR_LLD_IOCTL_OTP_GET_INFO  FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x06,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_READ_ACCESS)
+#define     FSR_LLD_IOCTL_OTP_GET_INFO          FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                               0x06,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_READ_ACCESS)
 
+#define     FSR_LLD_IOCTL_LOCK_TIGHT             FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                               0x07,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_WRITE_ACCESS)
 
-#define     FSR_LLD_IOCTL_LOCK_TIGHT    FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x07,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_WRITE_ACCESS)
+#define     FSR_LLD_IOCTL_LOCK_BLOCK            FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                               0x08,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_WRITE_ACCESS)
 
-#define     FSR_LLD_IOCTL_LOCK_BLOCK    FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x08,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_WRITE_ACCESS)
+#define     FSR_LLD_IOCTL_GET_LOCK_STAT         FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                              0x09,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_READ_ACCESS)
 
-#define     FSR_LLD_IOCTL_GET_LOCK_STAT FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x09,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_READ_ACCESS)          
+#define     FSR_LLD_IOCTL_UNLOCK_BLOCK          FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                               0x0A,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_ANY_ACCESS)
 
-#define     FSR_LLD_IOCTL_UNLOCK_BLOCK  FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x0A,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_ANY_ACCESS)
+#define     FSR_LLD_IOCTL_UNLOCK_ALLBLK         FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                               0x0B,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_ANY_ACCESS)
 
-#define     FSR_LLD_IOCTL_UNLOCK_ALLBLK FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x0B,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_ANY_ACCESS)
+#define     FSR_LLD_IOCTL_HOT_RESET             FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                              0x0C,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_ANY_ACCESS)
 
+#define     FSR_LLD_IOCTL_CORE_RESET            FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                               0x0D,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_ANY_ACCESS)
 
-#define     FSR_LLD_IOCTL_HOT_RESET     FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x0C,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_ANY_ACCESS)
+#define     FSR_LLD_IOCTL_OTP_ACCESS            FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                               0x0E,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_ANY_ACCESS)
 
-#define     FSR_LLD_IOCTL_CORE_RESET    FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x0D,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_ANY_ACCESS)
+#define     FSR_LLD_IOCTL_PI_ACCESS             FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                               0x0F,                   \
+                                                               FSR_METHOD_INOUT_DIRECT,\
+                                                               FSR_ANY_ACCESS)
 
-#define     FSR_LLD_IOCTL_OTP_ACCESS    FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x0E,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_ANY_ACCESS)
-
-#define     FSR_LLD_IOCTL_PI_ACCESS     FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
-                                                       0x0F,                   \
-                                                       FSR_METHOD_INOUT_DIRECT,\
-                                                       FSR_ANY_ACCESS)
-
+#define     FSR_LLD_IOCTL_SYS_CONF_RECOVERY     FSR_IOCTL_CODE(FSR_MODULE_LLD,         \
+                                                               0x10,                   \
+                                                               FSR_METHOD_IN_DIRECT,   \
+                                                               FSR_ANY_ACCESS)
 
 /* FSR_LLD_IOCTL_PI_READ/WRITE takes pointer to LLDPIArg as pBufO, pBufI
  * a member of LLDPIArg takes one of followings
  */
-#define     FSR_LLD_IOCTL_LOCK_PI       (0x4C4F434B) /* ascii for LOCK       */
-#define     FSR_LLD_IOCTL_UNLOCK_PI     (0x554E4C4B) /* ascii for UNLK       */
+#define     FSR_LLD_IOCTL_LOCK_PI               (0x4C4F434B) /* ascii for LOCK       */
+#define     FSR_LLD_IOCTL_UNLOCK_PI             (0x554E4C4B) /* ascii for UNLK       */
 
 /* FSR_LLD_IOCTL_OTP_LOCK takes combination of folowings as pBufI            */
-#define     FSR_LLD_OTP_LOCK_1ST_BLK    (0x00000001)
-#define     FSR_LLD_OTP_LOCK_OTP_BLK    (0x00000002)
+#define     FSR_LLD_OTP_LOCK_1ST_BLK            (0x00000001)
+#define     FSR_LLD_OTP_LOCK_OTP_BLK            (0x00000002)
 
 /* return value of FSR_LLD_IOCTL_OTP_GET_INFO                                */
-#define     FSR_LLD_OTP_1ST_BLK_LOCKED  (0x00000001)
-#define     FSR_LLD_OTP_1ST_BLK_UNLKED  (0x00000002)
-#define     FSR_LLD_OTP_OTP_BLK_LOCKED  (0x00000010)
-#define     FSR_LLD_OTP_OTP_BLK_UNLKED  (0x00000020)
+#define     FSR_LLD_OTP_1ST_BLK_LOCKED          (0x00000001)
+#define     FSR_LLD_OTP_1ST_BLK_UNLKED          (0x00000002)
+#define     FSR_LLD_OTP_OTP_BLK_LOCKED          (0x00000010)
+#define     FSR_LLD_OTP_OTP_BLK_UNLKED          (0x00000020)
 
 /* parameter[out], pBlockType of LLD_GetBlockInfo() takes one of these       */
-#define     FSR_LLD_SLC_BLOCK           (0x00000001)
-#define     FSR_LLD_MLC_BLOCK           (0x00000002)
+#define     FSR_LLD_SLC_BLOCK                   (0x00000001)
+#define     FSR_LLD_MLC_BLOCK                   (0x00000002)
 
 /*****************************************************************************/
 /** LLD Function Table Data Structures                                       */

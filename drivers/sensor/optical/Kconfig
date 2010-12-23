@@ -19,4 +19,8 @@ config OPTICAL_GP2A
 	  This option enables proximity & light sensors using gp2a driver.
 	  It is optimized for s3c6410.
 	  
-
+config GP2A_MODE_B                                                              
+	bool "GP2A MODE B"
+	default n
+	help
+	This option enables proximity mode B

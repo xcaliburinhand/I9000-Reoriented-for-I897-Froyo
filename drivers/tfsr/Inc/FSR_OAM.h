@@ -1,18 +1,19 @@
 /**
- *   @mainpage   Flex Sector Remapper : RFS_3.0.0_b035_LinuStoreIII_1.2.0_b035_FSR_1.2.1p1_b129_RC
+ *   @mainpage   Flex Sector Remapper : LinuStoreIII_1.2.0_b038-FSR_1.2.1p1_b139_RTM
  *
- *   @section Intro
+ *   @section Intro Intro
  *       Flash Translation Layer for Flex-OneNAND and OneNAND
- *    
- *    @section  Copyright
- *---------------------------------------------------------------------------*
- *                                                                           *
- * Copyright (C) 2003-2010 Samsung Electronics                               *
- * This program is free software; you can redistribute it and/or modify      *
- * it under the terms of the GNU General Public License version 2 as         *
- * published by the Free Software Foundation.                                *
- *                                                                           *
- *---------------------------------------------------------------------------*
+ *   
+ *      
+ *
+ *     @MULTI_BEGIN@ @COPYRIGHT_GPL
+ *     @section Copyright COPYRIGHT_GPL
+ *            COPYRIGHT. SAMSUNG ELECTRONICS CO., LTD.
+ *                                    ALL RIGHTS RESERVED
+ *     This program is free software; you can redistribute it and/or modify it
+ *     under the terms of the GNU General Public License version 2 
+ *     as published by the Free Software Foundation.
+ *     @MULTI_END@
  *
  *     @section Description
  *
@@ -111,12 +112,8 @@
 
 #else /* other case */
 
-    #if defined(FSR_OAM_RTLMSG_DISABLE)
-    #define FSR_RTL_PRINT(x)
-    #else
     #define FSR_RTL_PRINT(x)        FSR_OAM_DbgMsg x
-    #endif /* FSR_OAM_RTLMSG_DISABLE */
-
+   
     #if defined(FSR_OAM_DBGMSG_ENABLE)
     #define FSR_DBG_PRINT(x)        FSR_OAM_DbgMsg x
     #else
@@ -203,8 +200,7 @@
 #if defined(FSR_MAMMOTH_POWEROFF)
     #undef  FSR_MAMMOTH_POWEROFF
     #define FSR_MAMMOTH_POWEROFF()  {FSR_RTL_PRINT((TEXT("\nMammoth auto power off protocol : %s,line:%d,func:%s\n"), (const unsigned char *) __FSR_FILE__, __LINE__, (const unsigned char *) __FSR_FUNC__));\
-                                     FSR_RTL_PRINT((TEXT("\n<log P1=\"100\" P2=\"POR\" P3=\"1\" P4=\"mammoth auto power off\" />\n")));\
-                                     while(1);}
+                                     FSR_RTL_PRINT((TEXT("\n<log P1=\"100\" P2=\"POR\" P3=\"1\" P4=\"mammoth auto power off\" />\n")));}
 #else
     #define  FSR_MAMMOTH_POWEROFF()
 #endif

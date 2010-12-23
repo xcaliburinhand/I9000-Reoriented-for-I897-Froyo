@@ -206,5 +206,14 @@
 
 #define NR_IRQS		(IRQ_EINT_GROUP22_BASE + IRQ_EINT_GROUP22_NR + 1)
 
-#define HALL_SENSOR_IRQ		IRQ_EINT3
+#ifdef CONFIG_MACH_S5PC110_ARIES
+#if defined(CONFIG_ARIES_EUR)
+#include "irqs-s1eur.h"
+#elif defined(CONFIG_ARIES_NTT)
+#include "irqs-s1ntt.h"
+#elif defined(CONFIG_ARIES_LATONA)
+#include "irqs-latona.h"
+#endif
+#endif
+
 #endif /* ASM_ARCH_IRQS_H */

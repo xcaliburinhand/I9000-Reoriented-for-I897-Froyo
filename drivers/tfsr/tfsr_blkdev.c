@@ -9,7 +9,7 @@
  *---------------------------------------------------------------------------*
 */
 /**
- * @version	RFS_3.0.0_b035_LinuStoreIII_1.2.0_b035_FSR_1.2.1p1_b129_RC
+ * @version	LinuStoreIII_1.2.0_b038-FSR_1.2.1p1_b139_RTM
  * @file        drivers/tfsr/tfsr_blkdev.c
  * @brief       This file is BML I/O part which supports linux kernel 2.6
  *              It provides (un)registering block device, request function
@@ -290,7 +290,11 @@ static int bml_add_disk(u32 volume, u32 partno)
 
 	/* alloc scatterlist */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)
+	dev->sg = kmalloc(sizeof(struct scatterlist) * dev->queue->limits.max_segments, GFP_KERNEL);
+#else
 	dev->sg = kmalloc(sizeof(struct scatterlist) * dev->queue->limits.max_phys_segments, GFP_KERNEL);
+#endif
 #else
 	dev->sg = kmalloc(sizeof(struct scatterlist) * dev->queue->max_phys_segments, GFP_KERNEL);
 #endif
@@ -301,7 +305,11 @@ static int bml_add_disk(u32 volume, u32 partno)
 	}
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)
+	memset(dev->sg, 0, sizeof(struct scatterlist) * dev->queue->limits.max_segments);
+#else
 	memset(dev->sg, 0, sizeof(struct scatterlist) * dev->queue->limits.max_phys_segments);
+#endif
 #else
 	memset(dev->sg, 0, sizeof(struct scatterlist) * dev->queue->max_phys_segments);
 #endif

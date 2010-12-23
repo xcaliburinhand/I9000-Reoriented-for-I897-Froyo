@@ -1,18 +1,19 @@
 /**
- *   @mainpage   Flex Sector Remapper : RFS_3.0.0_b035_LinuStoreIII_1.2.0_b035_FSR_1.2.1p1_b129_RC
+ *   @mainpage   Flex Sector Remapper : LinuStoreIII_1.2.0_b038-FSR_1.2.1p1_b139_RTM
  *
- *   @section Intro
+ *   @section Intro Intro
  *       Flash Translation Layer for Flex-OneNAND and OneNAND
- *    
- *   @section  Copyright
- *---------------------------------------------------------------------------*
- *                                                                           *
- * Copyright (C) 2003-2010 Samsung Electronics                               *
- * This program is free software; you can redistribute it and/or modify      *
- * it under the terms of the GNU General Public License version 2 as         *
- * published by the Free Software Foundation.                                *
- *                                                                           *
- *---------------------------------------------------------------------------*
+ *   
+ *      
+ *
+ *     @MULTI_BEGIN@ @COPYRIGHT_GPL
+ *     @section Copyright COPYRIGHT_GPL
+ *            COPYRIGHT. SAMSUNG ELECTRONICS CO., LTD.
+ *                                    ALL RIGHTS RESERVED
+ *     This program is free software; you can redistribute it and/or modify it
+ *     under the terms of the GNU General Public License version 2 
+ *     as published by the Free Software Foundation.
+ *     @MULTI_END@
  *
  *     @section Description
  *
@@ -115,7 +116,7 @@
 #define     FSR_OND_4K_MAX_BADMARK             (4)      /* The size of gnBadMarkValue*/
 #define     FSR_OND_4K_MAX_BBMMETA             (2)      /* The size of gnBBMMetaValue*/
 #define     FSR_OND_4K_MAX_ECC_STATUS_REG      (4)      /* # of ECC status registers */
-#define     FSR_OND_4K_NUM_OF_BAD_MARK_PAGES   (2)
+#define     FSR_OND_4K_VALID_BLK_MARK          (0xFFFF) /* Valid bad mark */
 #define     FSR_OND_4K_SECTOR_SIZE             (FSR_SECTOR_SIZE)
 
 /* Hardware ECC of 4K OneNAND use five UINT16 (9 bytes) of spare area         */
@@ -565,11 +566,17 @@ PRIVATE const OneNAND4kSpec gstOND4kSpec[] = {
 /* 15.                                                                          nTEraseTime                           */
 /* 16.                                                                                 nSLCPECycle                    */
 /**********************************************************************************************************************/
-    /* 4Gb */
-    { 0x00EC, 0x0050, 0, 2048, 1, 1, 8, 16, 64, TRUE32, 50, 40, 45, 240, 500, 50000, 0x0101, 0x0E0E},
+    /* 4Gb MDP */
+    { 0x00EC, 0x0050, 0, 2048, 1, 1, 8, 16, 64, TRUE32, 50, 40, 45, 240, 500, 50000, 0x0202, 0x0C0C},
 
     /* 8Gb DDP */
-    { 0x00EC, 0x0068, 0, 4096, 2, 1, 8, 16, 64, TRUE32, 50, 80, 45, 240, 500, 50000, 0x0101, 0x0E0E},
+    { 0x00EC, 0x0068, 0, 4096, 2, 1, 8, 16, 64, TRUE32, 50, 80, 45, 240, 500, 50000, 0x0202, 0x0C0C},
+
+    /* 8Gb MDP */
+    { 0x00EC, 0x0060, 0, 4096, 1, 1, 8, 16, 64, TRUE32, 50, 80, 45, 240, 500, 50000, 0x0202, 0x0C0C},
+
+    /* 16Gb DDP */
+    { 0x00EC, 0x0078, 0, 8192, 2, 1, 8, 16, 64, TRUE32, 50,160, 45, 240, 500, 50000, 0x0202, 0x0C0C},
 
     {      0,      0, 0,    0, 0, 0, 0,  0, 0,  FALSE32,  0,  0, 0,   0,   0,     0, 0x0000, 0x0000},
 };
@@ -632,7 +639,6 @@ PRIVATE VOID    _CalcTransferTime    (          UINT32       nDev,
 PRIVATE INT32   _GetUniqueID         (          UINT32       nDev,
                                                 OneNAND4kCxt *pstOND4kCxt,
                                                 UINT32       nFlag);
-PRIVATE BOOL32  _IsBadMark           (          UINT16    nBadMarkInfo);
 
 #if defined (FSR_LLD_STATISTICS)
 PRIVATE VOID  _AddOND4kStatLoad      (          UINT32       nDev,
@@ -1200,9 +1206,14 @@ FSR_OND_4K_Open(UINT32  nDev,
 
         FSR_OAM_MEMSET(pstOND4kCxt->pTempBuffer, 0x00, nBytesPerPage);
 
+#if defined (FSR_LLD_STATISTICS)
         /* Time for transfering 16 bits between host & DataRAM of OneNAND */
         _CalcTransferTime(nDev, pstOND4kCxt->nSysConf1,
                           &nRdTransferTime, &nWrTransferTime);
+#else
+        nRdTransferTime = 0;
+        nWrTransferTime = 0;
+#endif
 
         pstOND4kCxt->nRdTranferTime  = nRdTransferTime; /* nano second base */
         pstOND4kCxt->nWrTranferTime  = nWrTransferTime; /* nano second base */
@@ -3257,43 +3268,6 @@ FSR_OND_4K_CopyBack(UINT32      nDev,
 
 
 /**
- * @brief           This function classifies bad mark information 
- *
- * @param[in]       nBadInfo    : Bad mark info read from 
- *
- * @return          TRUE32      : Bad mark 
- * @n               FALSE32     : Valid mark
- *
- * @author          Jinhyuck Kim
- * @version         1.2.1
- *
- */
-PRIVATE
-BOOL32 _IsBadMark(UINT16 nBadMarkInfo)
-{
-    UINT32 nBitOffset;
-    UINT32 nCntOfBit1 = 0;
-
-    FSR_STACK_VAR;
-
-    FSR_STACK_END;
-
-    /* Count the number of '1' in bad mark info */
-    for(nBitOffset = 0; nBitOffset < sizeof(UINT16) * 8; nBitOffset++)
-    {
-        if((nBadMarkInfo & (1 << nBitOffset)) != 0)
-        {
-            nCntOfBit1++;
-        }
-    }
-
-    /* Check bad mark based on bit majority */
-    return (nCntOfBit1 < sizeof(UINT16) * 8 - nCntOfBit1)? TRUE32 : FALSE32;
-}
-
-
-
-/**
  * @brief           This function checks whether block is bad or not
  *
  * @param[in]       nDev        : Physical Device Number (0 ~ 3)
@@ -3320,8 +3294,6 @@ FSR_OND_4K_ChkBadBlk(UINT32 nDev,
     volatile OneNAND4kReg      *pstFOReg;
              INT32              nLLDRe      = FSR_LLD_INIT_GOODBLOCK;
              UINT16             nDQ;
-             UINT32             nPageOffset;
-             BOOL32             bIsBadBlk;
 
     FSR_STACK_VAR;
 
@@ -3345,53 +3317,38 @@ FSR_OND_4K_ChkBadBlk(UINT32 nDev,
 
         pstOND4kCxt = gpstOND4kCxt[nDev];
         pstFOReg    = (volatile OneNAND4kReg *) pstOND4kCxt->nBaseAddr;
-        bIsBadBlk   = FALSE32;
 
-        for (nPageOffset = 0; nPageOffset < FSR_OND_4K_NUM_OF_BAD_MARK_PAGES; nPageOffset++)
-        {
-        		/* No need to check the return value (ignore the possibility of read error) */
-            FSR_OND_4K_ReadOptimal(nDev,
-                                   nPbn,
-                                   nPageOffset,            
-                                   NULL,        
-                                   NULL,   
-                                   (FSR_LLD_FLAG_ECC_OFF | FSR_LLD_FLAG_1X_LOAD));            
 
-            FSR_OND_4K_ReadOptimal(nDev,
-                                   nPbn,
-                                   nPageOffset,
-                                   NULL,
-                                   NULL,
-                                   (FSR_LLD_FLAG_ECC_OFF | FSR_LLD_FLAG_TRANSFER));            
+        /*
+         * Read BI on 1st page (ECC on)
+         * No need to check the return value (ignore the possibility of read error) 
+         */
+        FSR_OND_4K_ReadOptimal(nDev,
+                               nPbn,
+                               0,
+                               NULL,
+                               NULL,
+                               (FSR_LLD_FLAG_ECC_ON | FSR_LLD_FLAG_1X_LOAD));
 
-            nDQ = OND_4K_READ(*(volatile UINT16 *) &pstFOReg->nDataSB00[0]);
+        FSR_OND_4K_ReadOptimal(nDev,
+                               nPbn,
+                               0,
+                               NULL,
+                               NULL,
+                               (FSR_LLD_FLAG_ECC_ON | FSR_LLD_FLAG_TRANSFER));
 
-            /* 
-             * Because read disturbance can occur on bad mark information in 4K page OneNAND, 
-             * which is written on ECC-off mode,
-             * bad mark will be classified by using bit majority.
-             */
-            if (_IsBadMark(nDQ) == TRUE32)
-            {
-                bIsBadBlk = TRUE32;
-            }
-            else
-            {
-                bIsBadBlk = FALSE32;
-                break;
-            }
-        }
+        nDQ = OND_4K_READ(*(volatile UINT16 *) &pstFOReg->nDataSB00[0]);
 
-        if (bIsBadBlk == TRUE32)
+        if (nDQ != (UINT16) FSR_OND_4K_VALID_BLK_MARK)
         {
             FSR_DBZ_RTLMOUT(FSR_DBZ_ERROR | FSR_DBZ_LLD_INF,
-            (TEXT("[OND:INF]   %s(nDev:%d, nPbn:%d, nFlag:0x%08x) / %d line\r\n"),
-            __FSR_FUNC__, nDev, nPbn, nFlag, __LINE__));
+                (TEXT("[OND:INF]   %s(nDev:%d, nPbn:%d, nFlag:0x%08x) / %d line\r\n"),
+                __FSR_FUNC__, nDev, nPbn, nFlag, __LINE__));
 
 
             FSR_DBZ_RTLMOUT(FSR_DBZ_ERROR | FSR_DBZ_LLD_INF,
-            (TEXT("            nPbn = %d is a bad block\r\n"), nPbn));
-           
+                (TEXT("            nPbn = %d is a bad block\r\n"), nPbn));
+
             nLLDRe = FSR_LLD_INIT_BADBLOCK | FSR_LLD_BAD_BLK_1STPLN;
         }
         else
@@ -3445,16 +3402,12 @@ FSR_OND_4K_FlushOp(UINT32 nDev,
              OneNAND4kSpec     *pstOND4kSpec;
              UINT32             nIdx;
              UINT32             nPrevOp;
-
-#if !defined(FSR_OAM_RTLMSG_DISABLE)
              UINT32             nPrevPbn;
              UINT32             nPrevPgOffset;
-#endif
-
              UINT32             nPrevFlag;
-             INT32              nLLDRe       = FSR_LLD_SUCCESS;
+             INT32              nLLDRe          = FSR_LLD_SUCCESS;
              UINT16             nMasterInt;
-             UINT16             nECCRes; /* ECC result */
+             UINT16             nECCRes;        /* ECC result */
 
     FSR_STACK_VAR;
 
@@ -3493,11 +3446,8 @@ FSR_OND_4K_FlushOp(UINT32 nDev,
         nDie = nDie & ~FSR_OND_4K_FLUSHOP_CALLER_MASK;
 
         nPrevOp       = pstOND4kShMem->nPreOp[nDie];
-
-#if !defined(FSR_OAM_RTLMSG_DISABLE)
         nPrevPbn      = pstOND4kShMem->nPreOpPbn[nDie];
         nPrevPgOffset = pstOND4kShMem->nPreOpPgOffset[nDie];
-#endif
         nPrevFlag     = pstOND4kShMem->nPreOpFlag[nDie];
 
         /* Set DBS */
@@ -3550,27 +3500,23 @@ FSR_OND_4K_FlushOp(UINT32 nDev,
                     do
                     {
                         nECCRes = OND_4K_READ(pstFOReg->nEccStat[nIdx]);
-						
-						if (nECCRes & pstOND4kSpec->nECC2LvRdDist)
+                        if (nECCRes & pstOND4kSpec->nECC2LvRdDist)
                         {
-                            FSR_DBZ_RTLMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_ERROR,
+                            FSR_DBZ_DBGMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_WARN,
                                 (TEXT("[OND:INF]   %s(nDev:%d, nDie:%d, nFlag:0x%08x) / %d line\r\n"),
                                 __FSR_FUNC__, nDev, nDie, nFlag, __LINE__));
 
-                            FSR_DBZ_RTLMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_ERROR,
+                            FSR_DBZ_DBGMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_WARN,
                                 (TEXT("            pstOND4kCxt->nFlushOpCaller : %d\r\n"),
                                 pstOND4kCxt->nFlushOpCaller));
 
-                            FSR_DBZ_RTLMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_ERROR,
+                            FSR_DBZ_DBGMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_WARN,
                                 (TEXT("            2Lv read disturbance at nPbn:%d, nPgOffset:%d, nFlag:0x%08x\r\n"),
                                 nPrevPbn, nPrevPgOffset, nPrevFlag));
 
-                            FSR_DBZ_RTLMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_ERROR,
+                            FSR_DBZ_DBGMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_WARN,
                                 (TEXT("            Detected at ECC Register[%d]:0x%04x\r\n"),
                                 nIdx, OND_4K_READ(pstFOReg->nEccStat[nIdx])));
-
-                            _DumpRegisters(pstFOReg);
-                            _DumpSpareBuffer(pstFOReg);
 
 #if defined(FSR_LLD_PE_TEST)
                             gnECCStat0 = OND_4K_READ(pstFOReg->nEccStat[0]);
@@ -3588,19 +3534,19 @@ FSR_OND_4K_FlushOp(UINT32 nDev,
                         }
                         else if (nECCRes & pstOND4kSpec->nECC1LvRdDist)
                         {
-							FSR_DBZ_RTLMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_ERROR,
+                            FSR_DBZ_DBGMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_WARN,
                                 (TEXT("[OND:INF]   %s(nDev:%d, nDie:%d, nFlag:0x%08x) / %d line\r\n"),
                                 __FSR_FUNC__, nDev, nDie, nFlag, __LINE__));
 
-                            FSR_DBZ_RTLMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_ERROR,
+                            FSR_DBZ_DBGMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_WARN,
                                 (TEXT("            pstOND4kCxt->nFlushOpCaller : %d\r\n"),
                                 pstOND4kCxt->nFlushOpCaller));
 
-                            FSR_DBZ_RTLMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_ERROR,
+                            FSR_DBZ_DBGMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_WARN,
                                 (TEXT("            1Lv read disturbance at nPbn:%d, nPgOffset:%d, nFlag:0x%08x\r\n"),
                                 nPrevPbn, nPrevPgOffset, nPrevFlag));
 
-                            FSR_DBZ_RTLMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_ERROR,
+                            FSR_DBZ_DBGMOUT(FSR_DBZ_LLD_INF | FSR_DBZ_WARN,
                                 (TEXT("            Detected at ECC Register[%d]:0x%04x\r\n"),
                                 nIdx, OND_4K_READ(pstFOReg->nEccStat[nIdx])));
 
@@ -4682,12 +4628,18 @@ FSR_OND_4K_IOCtl(UINT32  nDev,
             }
             break;
 
+        case FSR_LLD_IOCTL_SYS_CONF_RECOVERY:
+            OND_4K_WRITE(pstFOReg->nSysConf1, pstOND4kCxt->nSysConf1);
+            break;
+
         default:
             nLLDRe = FSR_LLD_IOCTL_NOT_SUPPORT;
             break;
         }
 
-        if ((nCode == FSR_LLD_IOCTL_HOT_RESET) || (nCode == FSR_LLD_IOCTL_CORE_RESET))
+        if ((nCode == FSR_LLD_IOCTL_HOT_RESET) ||
+            (nCode == FSR_LLD_IOCTL_CORE_RESET) ||
+            (nCode == FSR_LLD_IOCTL_SYS_CONF_RECOVERY))
         {
             for (nDie = 0; nDie < pstOND4kSpec->nNumOfDies; nDie++)
             {
@@ -5510,6 +5462,8 @@ _DumpCmdLog(VOID)
 
 }
 
+
+#if defined(FSR_LLD_STATISTICS)
 /**
  * @brief           This function calculates transfer time for word (2 bytes)
  * @n               between host & OneNAND
@@ -5665,6 +5619,7 @@ _CalcTransferTime(UINT32  nDev,
     FSR_DBZ_DBGMOUT(FSR_DBZ_LLD_LOG,
         (TEXT("[OND:OUT] --%s(nDev:%d)\r\n"), __FSR_FUNC__, nDev));
 }
+#endif
 
 
 

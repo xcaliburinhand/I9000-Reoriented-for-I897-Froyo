@@ -228,6 +228,8 @@ enum s5p_gpio_number {
 #include "gpio-s1eur.h"
 #elif defined(CONFIG_ARIES_NTT)
 #include "gpio-s1ntt.h"
+#elif defined(CONFIG_ARIES_LATONA)
+#include "gpio-latona.h"
 #endif
 #endif	/* CONFIG_MACH_ARIES */
 

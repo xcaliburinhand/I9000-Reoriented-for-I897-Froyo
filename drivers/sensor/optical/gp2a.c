@@ -206,8 +206,121 @@ int IsChangedADC(int val)
 }
 #endif
 
-//#if defined(CONFIG_ARIES_EUR)
+
+#if defined(CONFIG_ARIES_LATONA)
+
+static void gp2a_work_func_light(struct work_struct *work)
+{
+	int adc=0;
+	state_type level_state = LIGHT_INIT;
+
+	/* read adc data from s5p110 */
+	adc = lightsensor_get_adcvalue();
+	gprintk("Optimized adc = %d \n",adc);
+	gprintk("cur_state = %d\n",cur_state);
+	gprintk("light_enable = %d\n",light_enable);
+	
+	/*
+	  *	Brightness By Lightsensor Specification.
+	  *	
+	  *	LIGHT_LEVEL4  :   1500 lux ~	: 300cd
+	  *	LIGHT_LEVEL3	 :    ~ 1500 lux	: 190cd
+	  *	LIGHT_LEVEL2	 :    ~ 0150 lux	: 130cd
+	  *	LIGHT_LEVEL1	 : 0 ~ 0015 lux	:  70cd
+	  */
+
+	if(adc >= 1114)
+	{
+		level_state = LIGHT_LEVEL4;
+		buffering = 4;
+	}
+
+	else if(adc >= 1094)  // 1094 ~ 1113
+	{
+		if(buffering == 4)
+		{	
+			level_state = LIGHT_LEVEL4;
+			buffering = 4;
+		}
+		else if((buffering == 1)||(buffering == 2)||(buffering == 3))
+		{
+			level_state = LIGHT_LEVEL3;
+			buffering = 3;
+		}
+	}
+	
+	else if(adc >= 510)
+	{
+		level_state = LIGHT_LEVEL3;
+		buffering = 3;
+	}
+
+	else if(adc >= 417 ) // 417 ~ 509
+	{
+		if((buffering == 3)||(buffering == 4))
+		{	
+			level_state = LIGHT_LEVEL3;
+			buffering = 3;
+		}
+		else if((buffering == 1)||(buffering == 2))
+		{
+			level_state = LIGHT_LEVEL2;
+			buffering = 2;
+		}
+	}
+
+	else if(adc >= 43)
+	{
+		level_state = LIGHT_LEVEL2;
+		buffering = 2;
+	}
+	
+	else if(adc >= 34) // 34 ~ 42
+	{
+		if((buffering == 2)||(buffering == 3)||(buffering == 4))
+		{	
+			level_state = LIGHT_LEVEL2;
+			buffering = 2;
+		}
+		else if(buffering == 1)
+		{
+			level_state = LIGHT_LEVEL1;
+			buffering = 1;
+		}
+	}
+
+	else if(adc < 34)
+	{
+		level_state = LIGHT_LEVEL1;
+		buffering = 1;
+	}
+	if((backlight_level > 5)&&(!lightsensor_test))    // backlight level is normal, not test mode
+	{
+		gprintk("backlight_level = %d\n", backlight_level); //Temp
+		cur_state = level_state;	
+	}
+#ifdef CONFIG_FB_S3C_MDNIE_TUNINGMODE_FOR_BACKLIGHT
+	if(autobrightness_mode)
+	{
+		#define MAX_BACKLIGHT_VALUE	255 // 192
+		if((pre_val!=1)&&(current_gamma_value == MAX_BACKLIGHT_VALUE)&&(level_state == LIGHT_LEVEL4)&&(current_mDNIe_UI == mDNIe_UI_MODE))
+		{	
+			mDNIe_Mode_set_for_backlight(pmDNIe_Gamma_set[1]);
+			pre_val = 1;
+			gprintk("mDNIe_Mode_set_for_backlight - pmDNIe_Gamma_set[1]\n" );
+		}
+	}
+#endif
+		
+	
+//	printk("==========adc = %d, cur_state = %d\n", adc, cur_state); //Temp
+}
+
+
+#else  ////////////////////////////////////////////
+
 #if 1
+
 static void gp2a_work_func_light(struct work_struct *work)
 {
 	int adc=0;
@@ -312,7 +425,12 @@ static void gp2a_work_func_light(struct work_struct *work)
 #ifdef CONFIG_FB_S3C_MDNIE_TUNINGMODE_FOR_BACKLIGHT
 	if(autobrightness_mode)
 	{
+	#if defined(CONFIG_ARIES_LATONA)
+		#define MAX_BACKLIGHT_VALUE	192
+		if((pre_val!=1)&&(current_gamma_value == MAX_BACKLIGHT_VALUE)&&(level_state == LIGHT_LEVEL5)&&(current_mDNIe_UI == mDNIe_UI_MODE))
+	#else
 		if((pre_val!=1)&&(current_gamma_value == 24)&&(level_state == LIGHT_LEVEL5)&&(current_mDNIe_UI == mDNIe_UI_MODE))
+	#endif
 		{	
 			mDNIe_Mode_set_for_backlight(pmDNIe_Gamma_set[1]);
 			pre_val = 1;
@@ -435,6 +553,8 @@ static void gp2a_work_func_light(struct work_struct *work)
 }
 #endif
 
+#endif // #if defined(CONFIG_ARIES_LATONA)
+
 int lightsensor_get_adcvalue(void)
 {
 	int i = 0;
@@ -518,7 +638,7 @@ static enum hrtimer_restart gp2a_timer_func(struct hrtimer *timer)
  *
  *                 
  */
-#if 0
+#if defined(CONFIG_GP2A_MODE_B)
 static void gp2a_work_func_prox(struct work_struct *work)
 {
 	struct gp2a_data *gp2a = container_of(work, struct gp2a_data, work_prox);
@@ -539,12 +659,12 @@ static void gp2a_work_func_prox(struct work_struct *work)
 	vout = value & 0x01;
 	printk(KERN_INFO "[PROXIMITY] value = %d \n",vout);
 
-
+	wake_lock_timeout(&prx_wake_lock, 3*HZ);
 
 	/* Report proximity information */
 	proximity_value = vout;
 
-	
+/*	
 	if(proximity_value ==0)
 	{
 		timeB = ktime_get();
@@ -561,7 +681,7 @@ static void gp2a_work_func_prox(struct work_struct *work)
 			printk(KERN_INFO "[PROXIMITY] wake_lock is already set \n");
 
 	}
-
+*/
 	if(USE_INPUT_DEVICE)
 	{
     	input_report_abs(gp2a->input_dev,ABS_DISTANCE,(int)vout);
@@ -581,7 +701,7 @@ static void gp2a_work_func_prox(struct work_struct *work)
 	}
 	else
 	{
-		value = 0x23;
+		value = 0x20;
 
 	}
 	opt_i2c_write((u8)(REGS_HYS),&value);
@@ -607,11 +727,28 @@ static void gp2a_work_func_prox(struct work_struct *work)
 
 irqreturn_t gp2a_irq_handler(int irq, void *dev_id)
 {
+
+#if defined(CONFIG_GP2A_MODE_B)
+	struct gp2a_data *gp2a = dev_id;
+#endif
 	char value;
+
+#if defined(CONFIG_GP2A_MODE_B)
+	printk("[PROXIMITY] gp2a->irq = %d\n",gp2a->irq);
+	if(gp2a->irq !=-1)
+	{
+		disable_irq_nosync(gp2a->irq);
+		gprintk("[PROXIMITY] disable_irq \n");
+	
+		queue_work(gp2a_wq_prox, &gp2a->work_prox);
+	
+	}
+#else
 	value = gpio_get_value(GPIO_PS_VOUT);
 
 	wake_lock_timeout(&prx_wake_lock, 3*HZ);
 	printk("[PROXIMITY] IRQ_HANDLED %d \n", value);
+#endif		
 	return IRQ_HANDLED;
 }
 
@@ -777,6 +914,8 @@ void gp2a_on(struct gp2a_data *gp2a, int type)
 
 static void gp2a_off(struct gp2a_data *gp2a, int type)
 {
+	u8 value;
+
 	gprintk(KERN_INFO "[OPTICAL] gp2a_off(%d)\n",type);
 	if(type == PROXIMITY || type == ALL)
 	{
@@ -792,6 +931,18 @@ static void gp2a_off(struct gp2a_data *gp2a, int type)
 		
 		proximity_enable =0;
 		proximity_value = 0;
+		#endif
+		
+		#if defined(CONFIG_GP2A_MODE_B)
+		/* set input/pull-down  */
+ 		s3c_gpio_cfgpin(GPIO_PS_VOUT, S3C_GPIO_INPUT);
+  		s3c_gpio_setpull(GPIO_PS_VOUT, S3C_GPIO_PULL_DOWN);
+		
+		disable_irq_nosync(gp2a ->irq);
+		
+		// SSD : Software shutdown function ( 0:shutdown mode, 1:opteration mode )
+		value = 0x02;	// VCON enable, SSD disable
+		opt_i2c_write((u8)(REGS_OPMOD),&value);
 		#endif
 	}
 
@@ -968,6 +1119,7 @@ static int gp2a_opt_probe( struct platform_device* pdev )
 	int irq;
 	int ret;
        u8 value;
+   	int i;
 
 	/* allocate driver_data */
 	gp2a = kzalloc(sizeof(struct gp2a_data),GFP_KERNEL);
@@ -988,7 +1140,14 @@ static int gp2a_opt_probe( struct platform_device* pdev )
 	    return -ENOMEM;
   //  INIT_WORK(&gp2a->work_prox, gp2a_work_func_prox);
     INIT_WORK(&gp2a->work_light, gp2a_work_func_light);
-	
+
+#if defined(CONFIG_GP2A_MODE_B)
+	gp2a_wq_prox = create_singlethread_workqueue("gp2a_wq_prox");
+	if (!gp2a_wq_prox)
+	    return -ENOMEM;
+
+	INIT_WORK(&gp2a->work_prox, gp2a_work_func_prox);
+#endif	
 	gprintk("Workqueue Settings complete\n");
 
 	ret = misc_register(&light_device);
@@ -1081,9 +1240,18 @@ static int gp2a_opt_probe( struct platform_device* pdev )
 
 
 	/* GP2A Regs INIT SETTINGS */
-	
+#if defined(CONFIG_GP2A_MODE_B)
+	printk("[gp2a_opt_probe] CONFIG_GP2A_MODE_B INIT \n");
+	for(i=1;i<5;i++)
+	{
+		opt_i2c_write((u8)(i),&gp2a_original_image[i]);
+		printk("[gp2a_opt_probe] gp2a_original_image:%x \n",gp2a_original_image[i]);	
+	}
+#else
+	printk("[gp2a_opt_probe] CONFIG_GP2A_MODE_A INIT \n");
 	value = 0x00;
 	opt_i2c_write((u8)(REGS_OPMOD),&value);
+#endif
 
 	/* INT Settings */	
 	irq = IRQ_GP2A_INT;
@@ -1093,15 +1261,23 @@ static int gp2a_opt_probe( struct platform_device* pdev )
 	if (ret) {
 		printk("unable to request irq proximity_int err:: %d\n", ret);
 		return ret;
-	}       
+	}
+	
+#if !defined(CONFIG_GP2A_MODE_B)	
        disable_irq(IRQ_GP2A_INT);
+#endif
+
 	gp2a->irq = irq;
 	gprintk("INT Settings complete\n");
-	
+
+#if defined(CONFIG_GP2A_MODE_B)		
+	gp2a_off(gp2a,PROXIMITY);
+#endif
+
 	/* maintain power-down mode before using sensor */
 
 	printk("gp2a_opt_probe is OK!!\n");
-	
+
 	return 0;
 }
 
@@ -1179,8 +1355,10 @@ static int gp2a_opt_resume( struct platform_device* pdev )
 	}
        else
        {
+#if !defined(CONFIG_GP2A_MODE_B)       
             	value = 0x00;
 		opt_i2c_write((u8)(REGS_OPMOD),&value);
+#endif		
        }
 
 //	cur_state = LIGHT_INIT;
@@ -1294,10 +1472,27 @@ static int proximity_onoff(u8 onoff)
        
 	if(onoff)
 	{
+
+#if defined(CONFIG_GP2A_MODE_B)
+	// ASD : Select switch for analog sleep function ( 0:ineffective, 1:effective )
+	// OCON[1:0] : Select switches for enabling/disabling VOUT terminal 
+	//             ( 00:enable, 11:force to go High, 10:forcr to go Low )
+	value = 0x18;	// 11:force to go High
+	opt_i2c_write((u8)(REGS_CON),&value);
+
+	value = 0x40;	// HYSD enable
+	opt_i2c_write((u8)(REGS_HYS),&value);
+
+	// VCON : VOUT terminal output method control ( 0:normal mode, 1:interrupt mode )
+	// SSD : Software shutdown function ( 0:shutdown mode, 1:opteration mode )
+	value = 0x03;	// VCON enable, SSD enable
+	opt_i2c_write((u8)(REGS_OPMOD),&value);
+#else
        	for(i=1;i<5;i++)
        	{
        		opt_i2c_write((u8)(i),&gp2a_original_image[i]);
     	}
+#endif		
 		proximity_enable = 1;
 
 		/* set INT  */
@@ -1306,6 +1501,14 @@ static int proximity_onoff(u8 onoff)
 		set_irq_type(IRQ_GP2A_INT, IRQ_TYPE_EDGE_BOTH);
 
         enable_irq(IRQ_GP2A_INT);
+
+#if defined(CONFIG_GP2A_MODE_B)
+	// OCON[1:0] : Select switches for enabling/disabling VOUT terminal 
+	//             ( 00:enable, 11:force to go High, 10:forcr to go Low )
+	value = 0x00;	// 00:enable
+	opt_i2c_write((u8)(REGS_CON),&value);
+#endif	
+	
 	}
 	else
 	{
@@ -1313,10 +1516,22 @@ static int proximity_onoff(u8 onoff)
  		s3c_gpio_cfgpin(GPIO_PS_VOUT, S3C_GPIO_INPUT);
   		s3c_gpio_setpull(GPIO_PS_VOUT, S3C_GPIO_PULL_DOWN);
 
+#if defined(CONFIG_GP2A_MODE_B)
+	disable_irq_nosync(IRQ_GP2A_INT);
+#else
         disable_irq(IRQ_GP2A_INT);
+#endif
+
+#if defined(CONFIG_GP2A_MODE_B)
+		// SSD : Software shutdown function ( 0:shutdown mode, 1:opteration mode )
+		value = 0x02;	// VCON enable, SSD disable
+		opt_i2c_write((u8)(REGS_OPMOD),&value);
+#else		
 		value = 0x00;
 		opt_i2c_write((u8)(REGS_OPMOD),&value);
+#endif		
 		proximity_enable = 0;
+	
 	}
 	
 	return 0;
@@ -1335,7 +1550,11 @@ static ssize_t proximity_read(struct file *filp, char *buf, size_t count, loff_t
 {
 	char value;
 	//printk("[%s] \n",__func__);
+#if defined(CONFIG_GP2A_MODE_B)	
+	value=((proximity_value==1)? 0:1);
+#else
 	value = gpio_get_value(GPIO_PS_VOUT);
+#endif
 	//printk("[%s]  %d\n",__func__, value);
 	put_user(value, buf);
 	return 1;
@@ -1423,6 +1642,11 @@ static void __exit gp2a_opt_exit(void)
 	struct gp2a_data *gp2a = dev_get_drvdata(switch_cmd_dev);
     if (gp2a_wq)
 		destroy_workqueue(gp2a_wq);
+	
+#if defined(CONFIG_GP2A_MODE_B)
+    if (gp2a_wq_prox)
+		destroy_workqueue(gp2a_wq_prox);
+#endif
 
 //	free_irq(IRQ_GP2A_INT,gp2a);
 	

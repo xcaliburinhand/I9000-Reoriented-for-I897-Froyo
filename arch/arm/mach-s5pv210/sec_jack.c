@@ -156,6 +156,8 @@ static int jack_type_detect_change(struct work_struct *ignored)
 	int count_pole=0;
 	bool bQuit = false;
 
+	//printk(KERN_INFO "[ JACK_DRIVER (%s,%d) ] gpio_get_value = %d\n", __func__,__LINE__,state);
+
 	while(!bQuit)
 	{
 		state = gpio_get_value(det_jack->gpio) ^ det_jack->low_active;
@@ -170,9 +172,9 @@ static int jack_type_detect_change(struct work_struct *ignored)
 			adc = s3c_adc_get_adc_data(SEC_HEADSET_ADC_CHANNEL);
 			/*  unstable zone */
 #if !defined(CONFIG_ARIES_NTT)
-			if(adc > 3250)
+			if(adc > 3400)
 #else
-			if(adc > 3600)
+			if( (adc > 3300 && adc <3400) || (adc >3600)) //ssong100911. 공정 테스트모드에서 EAR Loopback Fail 문제.
 #endif
 			{
 				
@@ -216,7 +218,11 @@ static int jack_type_detect_change(struct work_struct *ignored)
 #if defined(CONFIG_GALAXY_I897)
 			else if(adc > 700 && adc < 2500)
 #else
-                        else if(adc > 2000)
+#if !defined(CONFIG_ARIES_NTT)
+                       else if(adc > 900)
+#else
+                       else if(adc > 500 || (adc <= 3600 && adc >= 3400)) //ssong100911. 공정 테스트모드에서 EAR Loopback Fail 문제.
+#endif
 #endif
 			{
 				current_jack_type_status = SEC_HEADSET_4_POLE_DEVICE;
@@ -238,7 +244,11 @@ static int jack_type_detect_change(struct work_struct *ignored)
 			#endif
 			}
 			/* unstable zone */
+#if !defined(CONFIG_ARIES_NTT)
 			else if(adc > 600)
+#else				
+			else if(adc > 100)
+#endif				
 			{
 				SEC_JACKDEV_DBG("invalid adc > 600, adc is %d\n",adc);
 

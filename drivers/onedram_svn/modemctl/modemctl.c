@@ -135,7 +135,7 @@ static int sim_get_reference_status(struct modemctl *);
 static void sim_irq_debounce_timer_func(unsigned);
 
 
-#if defined (CONFIG_TARGET_LOCALE_EUR) ||  defined (CONFIG_ARIES_EUR)
+#if defined (CONFIG_TARGET_LOCALE_EUR) ||  defined (CONFIG_ARIES_EUR) || defined(CONFIG_ARIES_LATONA)
 static void xmm_on(struct modemctl *);
 static void xmm_off(struct modemctl *);
 static void xmm_reset(struct modemctl *);
@@ -181,15 +181,19 @@ static ssize_t show_status(struct device *d,
 		struct device_attribute *attr, char *buf);
 static ssize_t show_debug(struct device *d,
 		struct device_attribute *attr, char *buf);
+static ssize_t show_phoneactive(struct device *d,
+		struct device_attribute *attr, char *buf);
 
 static DEVICE_ATTR(control, S_IRUGO | S_IWUGO, show_control, store_control);
 static DEVICE_ATTR(status, S_IRUGO, show_status, NULL);
 static DEVICE_ATTR(debug, S_IRUGO, show_debug, NULL);
+static DEVICE_ATTR(phoneactive, S_IRUGO, show_phoneactive, NULL);
 
 static struct attribute *modemctl_attributes[] = {
 	&dev_attr_control.attr,
 	&dev_attr_status.attr,
 	&dev_attr_debug.attr,
+	&dev_attr_phoneactive.attr,	
 	NULL
 };
 
@@ -197,7 +201,7 @@ static const struct attribute_group modemctl_group = {
 	.attrs = modemctl_attributes,
 };
 
-#if defined (CONFIG_TARGET_LOCALE_EUR) ||  defined (CONFIG_ARIES_EUR)
+#if defined (CONFIG_TARGET_LOCALE_EUR) ||  defined (CONFIG_ARIES_EUR) || defined(CONFIG_ARIES_LATONA)
 /* declare mailbox init function for xmm */
 extern void onedram_init_mailbox(void);
 
@@ -534,6 +538,21 @@ static ssize_t show_status(struct device *d,
 
 	p += sprintf(p, "%d\n", modem_get_active(mc));
 
+	return p - buf;
+}
+
+static ssize_t show_phoneactive(struct device *d,
+		struct device_attribute *attr, char *buf)
+{
+	char *p = buf;
+	int level = 3;
+	struct modemctl *mc = dev_get_drvdata(d);
+
+	if (mc->gpio_phone_active) {
+		level = gpio_get_value(mc->gpio_phone_active);
+	}
+
+	p += sprintf(p, "%d\n", level);
 	return p - buf;
 }
 

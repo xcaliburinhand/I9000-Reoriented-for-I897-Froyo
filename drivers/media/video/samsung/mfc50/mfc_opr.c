@@ -31,11 +31,13 @@
  *
  */
 
+
 #include <linux/delay.h>
 #include <linux/mm.h>
 #include <linux/io.h>
 #include <plat/regs-mfc.h>
 #include <asm/cacheflush.h>
+#include <linux/sched.h>
 
 #include "mfc_opr.h"
 #include "mfc_logmsg.h"
@@ -164,20 +166,29 @@ void	mfc_fw_debug(mfc_wait_done_type command);
 //===========================================================================================================
 
 
+#define MC_STATUS_TIMEOUT	1000	/* ms */
+
 void mfc_cmd_reset(void)
 {
 	unsigned int mc_status;
+	unsigned long timeo = jiffies;
+
+	timeo += msecs_to_jiffies(MC_STATUS_TIMEOUT);
 
 	/* Stop procedure */
-	WRITEL(0x3f7, MFC_SW_RESET); //  reset VI
 	WRITEL(0x3f6, MFC_SW_RESET); //  reset RISC
 	WRITEL(0x3e2, MFC_SW_RESET); //  All reset except for MC
-	mdelay(2);
+	mdelay(10);
 
 	/* Check MC status */
 	do {
-		mc_status = READL(MFC_MC_STATUS);
-	} while(mc_status & 0x3);
+		mc_status = (READL(MFC_MC_STATUS) & 0x3);
+
+		if (mc_status == 0)
+			break;
+
+		schedule_timeout_uninterruptible(1);
+	} while (time_before(jiffies, timeo));
 	
 	WRITEL(0x0, MFC_SW_RESET);
 	WRITEL(0x3fe, MFC_SW_RESET);
@@ -674,7 +685,7 @@ static void mfc_set_encode_init_param(mfc_inst_ctx *mfc_ctx, mfc_args *args)
 
 			case 2:
 				WRITEL(0x3, MFC_ENC_MSLICE_CTRL);
-				WRITEL(ms_size, MFC_ENC_MSLICE_BYTE); // MFC_ENC_MSLICE_BYTE should be change MFC_ENC_MSLICE_BIT 
+				WRITEL(ms_size, MFC_ENC_MSLICE_BYTE); /* ms_size should be bit counts */
 				break;
 
 			default:
@@ -727,7 +738,7 @@ static void mfc_set_encode_init_param(mfc_inst_ctx *mfc_ctx, mfc_args *args)
 
 			WRITEL((enc_init_h264_arg->in_RC_frm_enable << 9) |
 					(enc_init_h264_arg->in_RC_mb_enable << 8) |
-					(enc_init_mpeg4_arg->in_frame_qp & 0x3f),
+					(enc_init_h264_arg->in_frame_qp & 0x3f),
 					MFC_RC_CONFIG);
 
 			if (enc_init_h264_arg->in_RC_mb_enable)
@@ -788,6 +799,8 @@ int mfc_load_firmware()
      fw_virbuf = mfc_get_fw_buff_vaddr();
      memset((void *)fw_virbuf,0, MFC_FW_MAX_SIZE);
      dmac_clean_range(fw_virbuf, fw_virbuf + MFC_FW_MAX_SIZE); 
+		
+	dmac_inv_range(mfc_fw_code, mfc_fw_code + mfc_fw_code_len);	   
      memcpy((void *)fw_virbuf, mfc_fw_code, mfc_fw_code_len);
      dmac_clean_range(fw_virbuf, fw_virbuf + mfc_fw_code_len); 
 
@@ -1377,6 +1390,10 @@ MFC_ERROR_CODE mfc_init_decode(mfc_inst_ctx *mfc_ctx, mfc_args *args)
 	int nSize;
 	int nIntrRet = 0;
 	int nReturnErrCode = 0;
+        int out_crop_top_offset;             /* [OUT] crop information, top offset                           */
+        int out_crop_bottom_offset;      /* [OUT] crop information, bottom offset                        */
+        int out_crop_left_offset;            /* [OUT] crop information, left offset                          */
+        int out_crop_right_offset;          /* [OUT] crop information, right offset                         */		
 
 	
 	mfc_debug("[%d] mfc_init_decode() start\n", current->pid);
@@ -1450,7 +1467,7 @@ MFC_ERROR_CODE mfc_init_decode(mfc_inst_ctx *mfc_ctx, mfc_args *args)
 	/* Set Display Delay and SliceEnable */
 	mfc_ctx->sliceEnable = 0;	
 	WRITEL(((mfc_ctx->sliceEnable << 31) |
-			(mfc_ctx->displayDelay ? ((1 << 30) | (mfc_ctx->displayDelay << 16)) : 0)), MFC_SI_CH0_DPB_CONFIG_CTRL);
+			(((1 << 30) | (mfc_ctx->displayDelay << 16)))), MFC_SI_CH0_DPB_CONFIG_CTRL);
 #endif	
 	
 	/* Codec Command : Decode a sequence header */
@@ -1528,7 +1545,7 @@ MFC_ERROR_CODE mfc_init_decode(mfc_inst_ctx *mfc_ctx, mfc_args *args)
 		mfc_ctx->totalDPBCnt = mfc_ctx->displayDelay;
 
 	WRITEL(((mfc_ctx->sliceEnable << 31) |
-			(mfc_ctx->displayDelay ? ((1 << 30) | (mfc_ctx->displayDelay << 16)) : 0) | mfc_ctx->totalDPBCnt), MFC_SI_CH0_DPB_CONFIG_CTRL);	
+			(((1 << 30) | (mfc_ctx->displayDelay << 16))) | mfc_ctx->totalDPBCnt), MFC_SI_CH0_DPB_CONFIG_CTRL);	
 #endif	
 	
 	mfc_debug("buf_width : %d buf_height : %d out_dpb_cnt : %d mfc_ctx->DPBCnt : %d\n",
@@ -1612,6 +1629,17 @@ MFC_ERROR_CODE mfc_init_decode(mfc_inst_ctx *mfc_ctx, mfc_args *args)
 	
 	mfc_ctx->IsStartedIFrame = 0;
 	
+	mfc_read_shared_mem(mfc_ctx->shared_mem_vaddr, &(mfc_ctx->shared_mem));
+	out_crop_top_offset = (mfc_ctx->shared_mem.crop_info2 & 0xffff);
+	out_crop_bottom_offset = (mfc_ctx->shared_mem.crop_info2 >> 16);
+	out_crop_left_offset = (mfc_ctx->shared_mem.crop_info1 & 0xffff);
+	out_crop_right_offset = (mfc_ctx->shared_mem.crop_info1 >> 16);
+
+	if(out_crop_bottom_offset > 0)
+		init_arg->out_img_height = init_arg->out_img_height - out_crop_bottom_offset;
+	if(out_crop_right_offset > 0)
+		init_arg->out_img_width = init_arg->out_img_width - out_crop_right_offset;
+		
 	mfc_backup_context(mfc_ctx);
 
 	mfc_debug("[%d] mfc_init_decode() end\n", current->pid);

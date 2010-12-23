@@ -96,7 +96,7 @@ extern void tcp_time_wait(struct sock *sk, int state, int timeo);
 				 * 15 is ~13-30min depending on RTO.
 				 */
 
-#define TCP_SYN_RETRIES	 5	/* number of times to retry active opening a
+#define TCP_SYN_RETRIES	 6	/* number of times to retry active opening a
 				 * connection: ~180sec is RFC minimum	*/
 
 #define TCP_SYNACK_RETRIES 5	/* number of times to retry passive opening a
@@ -127,7 +127,7 @@ extern void tcp_time_wait(struct sock *sk, int state, int timeo);
 #endif
 #define TCP_RTO_MAX	((unsigned)(120*HZ))
 #define TCP_RTO_MIN	((unsigned)(HZ/5))
-#define TCP_TIMEOUT_INIT ((unsigned)(/*3*/1*HZ))	/* RFC 1122 initial RTO value	*/
+#define TCP_TIMEOUT_INIT ((unsigned)(1*HZ))	/* RFC 1122 initial RTO value	*/
 
 #define TCP_RESOURCE_PROBE_INTERVAL ((unsigned)(HZ/2U)) /* Maximal interval between probes
 					                 * for local resources.

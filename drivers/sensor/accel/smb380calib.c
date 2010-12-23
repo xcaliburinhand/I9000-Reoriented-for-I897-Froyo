@@ -244,6 +244,7 @@ int smb380_calibrate(smb380acc_t orientation, int *tries)
 	unsigned short old_offset_x, old_offset_y, old_offset_z;
 	int need_calibration=0, min_max_ok=0;	
 	int ltries;
+	int retry = 30;
 
 	smb380acc_t min,max,avg;
 
@@ -267,6 +268,12 @@ int smb380_calibrate(smb380acc_t orientation, int *tries)
 
 		min_max_ok = smb380_verify_min_max(min, max, avg);
 
+		if(!min_max_ok)
+		{
+			retry--;
+			if(retry <= 0)
+				return (-1);
+		}
 		/* check if calibration is needed */
 		if (min_max_ok)
 			need_calibration = smb380_calc_new_offset(orientation, avg, &offset_x, &offset_y, &offset_z);		

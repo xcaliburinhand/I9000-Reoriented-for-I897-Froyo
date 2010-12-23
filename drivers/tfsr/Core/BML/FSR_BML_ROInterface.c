@@ -1,18 +1,19 @@
 /**
- *   @mainpage   Flex Sector Remapper : RFS_3.0.0_b035_LinuStoreIII_1.2.0_b035_FSR_1.2.1p1_b129_RC
+ *   @mainpage   Flex Sector Remapper : LinuStoreIII_1.2.0_b038-FSR_1.2.1p1_b139_RTM
  *
- *   @section Intro
+ *   @section Intro Intro
  *       Flash Translation Layer for Flex-OneNAND and OneNAND
- *    
- *    @section  Copyright
- *---------------------------------------------------------------------------*
- *                                                                           *
- * Copyright (C) 2003-2010 Samsung Electronics                               *
- * This program is free software; you can redistribute it and/or modify      *
- * it under the terms of the GNU General Public License version 2 as         *
- * published by the Free Software Foundation.                                *
- *                                                                           *
- *---------------------------------------------------------------------------*
+ *   
+ *      
+ *
+ *     @MULTI_BEGIN@ @COPYRIGHT_GPL
+ *     @section Copyright COPYRIGHT_GPL
+ *            COPYRIGHT. SAMSUNG ELECTRONICS CO., LTD.
+ *                                    ALL RIGHTS RESERVED
+ *     This program is free software; you can redistribute it and/or modify it
+ *     under the terms of the GNU General Public License version 2 
+ *     as published by the Free Software Foundation.
+ *     @MULTI_END@
  *
  *     @section Description
  *
@@ -44,11 +45,12 @@
 #include "FSR_BML_BBMMount.h"
 #include "FSR_BML_BadBlkMgr.h"
 
+/* @MULTI_BEGIN@ For packaging automation */
+/* For packaging automation @MULTI_END@   */
 
 /**
  *  @brief      Static function prototypes
  */
-
 PRIVATE INT32   _ProtectLockedArea  (UINT32     nVol,
                                      FSRPartI  *pstPartI);
 
@@ -961,8 +963,8 @@ _BML_Read(UINT32        nVol,
     }
     else
     {
-        if (((nFlag & FSR_BML_FLAG_FORCED_ERASE_REFRESH)    != FSR_BML_FLAG_FORCED_ERASE_REFRESH)  &&
-            ((nFlag & FSR_BML_FLAG_INFORM_DISTURBANCE_ERROR) == FSR_BML_FLAG_INFORM_DISTURBANCE_ERROR))
+        if ((nFlag & FSR_BML_FLAG_INFORM_DISTURBANCE_ERROR) == 
+            FSR_BML_FLAG_INFORM_DISTURBANCE_ERROR)
         {
             if (bChkRdDisturbErr == TRUE32)
             {
@@ -1116,8 +1118,10 @@ FSR_BML_Open(UINT32    nVol,
 
     FSR_STACK_END;
 
+#if !defined(FSR_OAM_RTLMSG_DISABLE)
     FSR_DBZ_RTLMOUT(FSR_DBZ_BML_IF, (TEXT("[BIF:   ]   FSR VERSION: %s\r\n"), 
         FSR_Version(&nVersion)));
+#endif
 
     FSR_DBZ_DBGMOUT(FSR_DBZ_BML_IF, (TEXT("[BIF:IN ] ++%s(nVol: %d, nFlag: 0x%x)\r\n"), __FSR_FUNC__, nVol, nFlag));
 
@@ -1345,8 +1349,10 @@ FSR_BML_Close(UINT32    nVol,
     BOOL32          bRe     = TRUE32;
     INT32           nLLDRe  = FSR_LLD_SUCCESS;
     INT32           nBMLRe  = FSR_BML_SUCCESS;
+    INT32           nPAMRe  = FSR_PAM_SUCCESS;      /* PAM Return value         */
     BmlVolCxt      *pstVol;
     BmlShCxt       *pstShCxt;
+    FsrVolParm      stPAM[FSR_MAX_VOLS];
 
     FSR_STACK_VAR;
 
@@ -1370,6 +1376,12 @@ FSR_BML_Close(UINT32    nVol,
     CHK_VOL_OPEN(pstVol->bVolOpen);
 
     FSR_ASSERT(nVol < FSR_MAX_VOLS);
+
+    nPAMRe  = FSR_PAM_GetPAParm(stPAM);
+    if (nPAMRe != FSR_PAM_SUCCESS)
+    {
+        return FSR_BML_PAM_ACCESS_ERROR;
+    }
 
     if ((nFlag & FSR_BML_FLAG_CLOSE_ALL) == FSR_BML_FLAG_CLOSE_ALL)
     {
@@ -1450,6 +1462,13 @@ FSR_BML_Close(UINT32    nVol,
         nBMLRe = FSR_BML_CRITICAL_ERROR;
         FSR_DBZ_RTLMOUT(FSR_DBZ_ERROR,  (TEXT("[BIF:ERR]   %s(nVol: %d, nFlag: 0x%x, nRe: 0x%x)\r\n"),
                                         __FSR_FUNC__, nVol, nFlag, nBMLRe));
+    }
+
+    if (((nFlag & FSR_BML_FLAG_CLOSE_ALL) == FSR_BML_FLAG_CLOSE_ALL) && 
+        (stPAM[nVol].bProcessorSynchronization == TRUE32))
+    {
+        *(pstVol->pnSharedOpenCnt)  = 0;
+        *(pstVol->pbUseSharedMemory) = FALSE32;
     }
 
 #if !defined(TINY_FSR)
@@ -1561,6 +1580,8 @@ FSR_BML_GetVolSpec(UINT32        nVol,
             break;
         }
 
+        /* @MULTI_BEGIN@ For packaging automation */
+        /* For packaging automation @MULTI_END@   */
 
         /* Set the value of volume context for FSRVolSpec */
         pstVolSpec->nNumOfUsUnits   =  (UINT16) (pstVol->nNumOfUsBlks / (pstVol->nNumOfPlane * pstVol->nNumOfWays));
@@ -2364,7 +2385,7 @@ FSR_BML_Resume( UINT32 nVol, UINT32 nFlag )
             nPDev   = nVol * DEVS_PER_VOL + nDevIdx;
 
             /* LLD invalidates LLD Read-Cache and restores Device Registers after Hot-Reset */
-            nLLDRe  = pstVol->LLD_IOCtl( nPDev, FSR_LLD_IOCTL_HOT_RESET, NULL, 0, NULL, 0, NULL );
+            nLLDRe  = pstVol->LLD_IOCtl( nPDev, FSR_LLD_IOCTL_SYS_CONF_RECOVERY, NULL, 0, NULL, 0, NULL );
             if ( nLLDRe != FSR_LLD_SUCCESS )
             {
                 FSR_DBZ_RTLMOUT( FSR_DBZ_ERROR, ( TEXT( "[BIF:   ]   %s(nVol: %d, nRe:0x%x)/ %d line\r\n" ),

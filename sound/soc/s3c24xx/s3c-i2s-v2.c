@@ -364,6 +364,10 @@ int s3c2412_i2s_hw_params(struct snd_pcm_substream *substream,
 			i2s->dma_capture->dma_size = 2;
 		break;
 	case 2:
+		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+			i2s->dma_playback->dma_size = 4;
+		else
+			i2s->dma_capture->dma_size = 4;
 		break;
 	default:
 		break;

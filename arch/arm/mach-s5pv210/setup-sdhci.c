@@ -309,12 +309,8 @@ void universal_sdhci2_cfg_ext_cd(void)
 {
 	printk(" Universal :SD Detect configuration \n");
 
-#if defined(CONFIG_MACH_S5PC110_P1)
-	s3c_gpio_setpull(S5PV210_GPH3(4), S3C_GPIO_PULL_NONE);
-#else
-		s3c_gpio_setpull(S5PV210_GPH3(4), S3C_GPIO_PULL_NONE);
-#endif
-	set_irq_type(IRQ_EINT(28), IRQ_TYPE_EDGE_BOTH);
+	s3c_gpio_setpull(GPIO_T_FLASH_DETECT, S3C_GPIO_PULL_NONE);
+	set_irq_type(IRQ_T_FLASH_DETECT, IRQ_TYPE_EDGE_BOTH);
 }
 #endif // CONFIG_MACH_S5PC110_ARIES
 
@@ -335,7 +331,7 @@ static struct s3c_sdhci_platdata hsmmc2_platdata = {
 	.host_caps	= MMC_CAP_8_BIT_DATA,
 #endif
 #if defined (CONFIG_MACH_S5PC110_ARIES) || defined(CONFIG_MACH_S5PC110_P1)
-	.ext_cd = IRQ_EINT(28),
+	.ext_cd = IRQ_T_FLASH_DETECT,
 	.cfg_ext_cd =universal_sdhci2_cfg_ext_cd,
 	.detect_ext_cd = universal_sdhci2_detect_ext_cd,
 #endif

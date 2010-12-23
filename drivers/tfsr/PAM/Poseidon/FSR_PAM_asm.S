@@ -2,7 +2,7 @@
 @; This program is free software; you can redistribute it and/or modify
 @; it under the terms of the GNU General Public License version 2 as      
 @; published by the Free Software Foundation.      
-@; version     RFS_3.0.0_b035_LinuStoreIII_1.2.0_b035_FSR_1.2.1p1_b129_RC
+@; version     LinuStoreIII_1.2.0_b038-FSR_1.2.1p1_b139_RTM
 
 @;	.section C$$code @;@,CODE,READONLY
 	.text

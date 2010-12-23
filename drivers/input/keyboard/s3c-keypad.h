@@ -60,7 +60,7 @@ int keypad_keycode[] = {
 		14,  106,  3,  14,  27,  43,  40,  28,      //111			
 
 #elif defined (CONFIG_MACH_S5PC110_ARIES)
-              50,0,0,0,58,42,
+              50,8,0,0,58,42,		// add camera key code for DFTA
 
 #elif defined (CONFIG_MACH_SMDKC110)
 		1,2,3,4,5,6,7,8,

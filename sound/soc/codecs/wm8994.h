@@ -40,10 +40,19 @@ extern struct snd_soc_dai wm8994_dai;
 #if defined CONFIG_SND_SOC_WM8994_PCM
 #define ATTACH_ADDITINAL_PCM_DRIVER	// for VT call.
 #endif
+
+//------------------------------------------------
+// Definitions of Feature for VoIP and 3 Pole
+//------------------------------------------------
+#if !(defined (CONFIG_ARIES_NTT))
+#define FEATURE_VOIP
+#define FEATURE_3POLE_CALL_SUPPORT
+#endif
+
 //------------------------------------------------
 // Definitions of enum type
 //------------------------------------------------
-enum playback_path	{ PLAYBACK_OFF, RCV, SPK, HP, BT, DUAL, RING_SPK, RING_HP, RING_DUAL, EXTRA_DOCK_SPEAKER, TV_OUT};
+enum playback_path	{ PLAYBACK_OFF, RCV, SPK, HP, BT, DUAL, RING_SPK, RING_HP, RING_DUAL, EXTRA_DOCK_SPEAKER, TV_OUT, HP_3POLE = 5};
 enum mic_path		{ MAIN, SUB, BT_REC, MIC_OFF};
 enum fmradio_path { FMR_OFF, FMR_SPK, FMR_HP, FMR_SPK_MIX, FMR_HP_MIX, FMR_DUAL_MIX};
 enum fmradio_mix_path	{ FMR_MIX_OFF, FMR_MIX_HP, FMR_MIX_SPK, FMR_MIX_DUAL};
@@ -100,6 +109,7 @@ struct wm8994_priv {
 	select_route *universal_playback_path;
 	select_route *universal_voicecall_path;
 	select_mic_route *universal_mic_path;
+	select_route *universal_voipcall_path;
 	int testmode_config_flag;	// for testmode.
 };
 
@@ -152,6 +162,9 @@ void wm8994_set_playback_extra_dock_speaker(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_common_setting(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_receiver(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_headset(struct snd_soc_codec *codec);
+#if (defined FEATURE_3POLE_CALL_SUPPORT)
+void wm8994_set_voicecall_headphone(struct snd_soc_codec *codec);
+#endif
 void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_bluetooth(struct snd_soc_codec *codec);
 void wm8994_set_fmradio_common(struct snd_soc_codec *codec, int onoff);
@@ -160,6 +173,16 @@ void wm8994_set_fmradio_speaker(struct snd_soc_codec *codec);
 void wm8994_set_fmradio_headset_mix(struct snd_soc_codec *codec);
 void wm8994_set_fmradio_speaker_mix(struct snd_soc_codec *codec);
 void wm8994_set_fmradio_speaker_headset_mix(struct snd_soc_codec *codec);
+#if (defined FEATURE_VOIP)
+void wm8994_set_voipcall_receiver(struct snd_soc_codec *codec);
+void wm8994_set_voipcall_headset(struct snd_soc_codec *codec);
+#if (defined FEATURE_3POLE_CALL_SUPPORT)
+void wm8994_set_voipcall_headphone(struct snd_soc_codec *codec);
+#endif
+void wm8994_set_voipcall_speaker(struct snd_soc_codec *codec);
+void wm8994_set_voipcall_bluetooth(struct snd_soc_codec *codec);
+#endif
+
 #if defined WM8994_REGISTER_DUMP
 void wm8994_register_dump(struct snd_soc_codec *codec);
 #endif

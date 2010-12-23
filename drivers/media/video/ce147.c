@@ -2096,10 +2096,12 @@ static int ce147_set_capture_exif(struct v4l2_subdev *sd)
 	unsigned int ce147_reglen_model = 130;	
 	
 	unsigned char ce147_gps_processing[130] = {0x00,};
-	unsigned int ce147_reglen_gps_processing = 130;	
-#if !defined(CONFIG_ARIES_NTT)
+	unsigned int ce147_reglen_gps_processing = 130;
+#if defined(CONFIG_ARIES_LATONA)
+	unsigned char ce147_str_model[9] = "GT-I9003\0";
+#elif !defined(CONFIG_ARIES_NTT)
 	unsigned char ce147_str_model[9] = "GT-I9000\0";
-#else // Modify NTTS1
+#elif defined(CONFIG_ARIES_NTT)
 	unsigned char ce147_str_model[7] = "SC-02B\0";
 #endif
 #if 0
@@ -2206,7 +2208,7 @@ static int ce147_set_capture_exif(struct v4l2_subdev *sd)
 		dev_err(&client->dev, "%s: failed: i2c_write for gps method\n", __func__);
 		return -EIO;
 	}
-		
+	
 	ce147_msg(&client->dev, "%s: done\n", __func__);
 
 	return 0;
@@ -2635,7 +2637,7 @@ static int ce147_set_flash(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	unsigned int ce147_len_set_flash = 2;
 	unsigned char ce147_buf_set_flash_manual[2] = { 0x00, 0x00 };
 	unsigned int ce147_len_set_flash_manual = 2;
-	
+
 	switch(ctrl->value)
 	{
 		case FLASH_MODE_OFF:

@@ -34,7 +34,7 @@
  */
 const int temper_table[][2] =  {
 	/* ADC, Temperature (C) */
-	{ 1667,		-70	},
+	{ 1667,		-70	}, //0 
 	{ 1658,		-60	},
 	{ 1632,		-50	},
 	{ 1619,		-40	},
@@ -51,7 +51,7 @@ const int temper_table[][2] =  {
 	{ 1518,		10	},
 #endif
 	{ 1513,		20	},
-	{ 1491,		30	},
+	{ 1491,		30	}, //10
 	{ 1468,		40	},
 	{ 1445,		50	},
 	{ 1421,		60	},
@@ -61,7 +61,7 @@ const int temper_table[][2] =  {
 	{ 1324,		100	},
 	{ 1299,		110	},
 	{ 1275,		120	},
-	{ 1251,		130	},
+	{ 1251,		130	}, //20
 	{ 1226,		140	},
 	{ 1202,		150	},
 	{ 1178,		160	},
@@ -71,7 +71,7 @@ const int temper_table[][2] =  {
 	{ 1084,		200	},
 	{ 1060,		210	},
 	{ 1037,		220	},
-	{ 1013,		230	},
+	{ 1013,		230	}, //30
 	{ 990,		240	},
 	{ 966,		250	},
 	{ 943,		260	},
@@ -81,7 +81,7 @@ const int temper_table[][2] =  {
 	{ 852,		300	},
 	{ 829,		310	},
 	{ 806,		320	},
-	{ 784,		330	},
+	{ 784,		330	}, //40
 	{ 761,		340	},
 	{ 738,		350	},
 	{ 718,		360	},
@@ -91,7 +91,7 @@ const int temper_table[][2] =  {
 	{ 636,		400	},
 	{ 615,		410	},
 	{ 595,		420	},
-	{ 574,		430	},
+	{ 574,		430	}, //50
 	{ 554,		440	},
 	{ 533,		450	},
 	{ 518,		460	},
@@ -101,7 +101,7 @@ const int temper_table[][2] =  {
 	{ 457,		500	},
 	{ 442,		510	},
 	{ 427,		520	},
-	{ 411,		530	},
+	{ 411,		530	}, //60
 	{ 396,		540	},
 	{ 381,		550	},
 #if !defined(CONFIG_ARIES_NTT)
@@ -118,16 +118,35 @@ const int temper_table[][2] =  {
 	{ 306,		600	},
 	{ 299,		610	},
 	{ 293,		620	},
-	{ 286,		630	},
+	{ 286,		630	}, //70
 	{ 275,		640	},
 	{ 264,		650	},
 };
 
 #define TEMP_IDX_ZERO_CELSIUS	7
+#if !defined(CONFIG_ARIES_LATONA)
+
 #define TEMP_HIGH_BLOCK		temper_table[TEMP_IDX_ZERO_CELSIUS+63][0]
 #define TEMP_HIGH_RECOVER		temper_table[TEMP_IDX_ZERO_CELSIUS+58][0]
 #define TEMP_LOW_BLOCK			temper_table[TEMP_IDX_ZERO_CELSIUS-4][0]
 #define TEMP_LOW_RECOVER		temper_table[TEMP_IDX_ZERO_CELSIUS+1][0]
+
+#else
+
+#define SUPPORT_EVENT_TEMP_BLOCK
+// [ LATONA SPEC. 
+// 	 NORMAL => HIGH_BLOCK: 45, HIGH_RECOV: 40, LOW_BLOCK: 0, LOW_BLOCK: 3
+//	 EVENT  => HIGH_BLOCK: 63, HIGH_RECOV: 58
+#define TEMP_HIGH_BLOCK			temper_table[TEMP_IDX_ZERO_CELSIUS+53][0]
+#define TEMP_HIGH_RECOVER		temper_table[TEMP_IDX_ZERO_CELSIUS+48][0]
+#define TEMP_LOW_BLOCK			temper_table[TEMP_IDX_ZERO_CELSIUS+4][0]
+#define TEMP_LOW_RECOVER		temper_table[TEMP_IDX_ZERO_CELSIUS+7][0]
+
+#define TEMP_EVENT_HIGH_BLOCK	224//63' 241//65' // It is not in table. temper_table[TEMP_IDX_ZERO_CELSIUS+53+20][0]
+#define TEMP_EVENT_HIGH_RECOVER	280//temper_table[TEMP_IDX_ZERO_CELSIUS+50][0]
+// ]
+
+#endif
 
 /*
  * AriesQ Rev00 board ADC channel

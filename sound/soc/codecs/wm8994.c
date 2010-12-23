@@ -123,16 +123,47 @@ int vtCallActive = 0;
 //------------------------------------------------
 // Definitions of sound path
 //------------------------------------------------
-select_route universal_wm8994_playback_paths[] = 
-	{wm8994_set_off, wm8994_set_playback_receiver,
-	wm8994_set_playback_speaker, wm8994_set_playback_headset, wm8994_set_playback_bluetooth, 
-	wm8994_set_playback_speaker_headset, wm8994_set_playback_extra_dock_speaker, wm8994_set_playback_headset};
+select_route universal_wm8994_playback_paths[] = {
+	wm8994_set_off, 			// OFF
+	wm8994_set_playback_receiver,		// RCV
+	wm8994_set_playback_speaker, 		// SPK
+	wm8994_set_playback_headset, 		// HP
+	wm8994_set_playback_bluetooth, 		// BT
+	wm8994_set_playback_speaker_headset, 	// DUAL
+	wm8994_set_playback_extra_dock_speaker, // EXTRA_DOCK_SPEAKER
+	wm8994_set_playback_headset		// TV_OUT
+};
 
-select_route universal_wm8994_voicecall_paths[] = 
-	{wm8994_set_off, wm8994_set_voicecall_receiver, 
-	wm8994_set_voicecall_speaker, wm8994_set_voicecall_headset, wm8994_set_voicecall_bluetooth}; 
+select_route universal_wm8994_voicecall_paths[] = {
+	wm8994_set_off, 			// OFF
+	wm8994_set_voicecall_receiver, 		// RCV
+	wm8994_set_voicecall_speaker, 		// SPK
+	wm8994_set_voicecall_headset, 		// HP
+	wm8994_set_voicecall_bluetooth,		// BT
+#if (defined FEATURE_3POLE_CALL_SUPPORT)	
+	wm8994_set_voicecall_headphone		// 3 Pole Headset
+#endif
+};
 
-select_mic_route universal_wm8994_mic_paths[] = {wm8994_record_main_mic, wm8994_record_headset_mic, wm8994_record_bluetooth};
+#if (defined FEATURE_VOIP)
+select_route universal_wm8994_voipcall_paths[] =
+{
+	wm8994_set_off,				// OFF
+	wm8994_set_voipcall_receiver,		// RCV
+	wm8994_set_voipcall_speaker,		// SPK
+	wm8994_set_voipcall_headset,		// HP
+	wm8994_set_voipcall_bluetooth,		// BT
+#if (defined FEATURE_3POLE_CALL_SUPPORT)	
+	wm8994_set_voipcall_headphone		// 3 Pole Headset
+#endif
+};
+#endif
+
+select_mic_route universal_wm8994_mic_paths[] = {
+	wm8994_record_main_mic, 	// Main MIC
+	wm8994_record_headset_mic, 	// Sub MIC
+	wm8994_record_bluetooth		// BT MIC
+};
 
 
 //------------------------------------------------
@@ -178,6 +209,12 @@ int wm8994_write(struct snd_soc_codec *codec, unsigned int reg, unsigned int val
 	 *   D15..D9 WM8993 register offset
 	 *   D8...D0 register data
 	 */
+
+#if defined(CONFIG_ARIES_NTT)
+	//ssong100903. WM8994 Applications Issue Report CE000681 Changing digital path or clock enable bits when active may result in no sound output 
+	if(reg == 0x5) value |= 0x3303;
+#endif //#if defined(CONFIG_ARIES_NTT)
+
 	data[0] = (reg & 0xff00 ) >> 8;
 	data[1] = reg & 0x00ff;
 	data[2] = value >> 8;
@@ -251,7 +288,10 @@ static int wm899x_inpga_put_volsw_vu(struct snd_kcontrol *kcontrol,
 //------------------------------------------------
 #define MAX_VOICECALL_PATH 4
 static const char *playback_path[] = { "OFF", "RCV", "SPK", "HP", "BT", "DUAL", "RING_SPK", "RING_HP", "RING_DUAL", "EXTRA_DOCK_SPEAKER", "TV_OUT"};
-static const char *voicecall_path[] = { "OFF", "RCV", "SPK", "HP", "BT", };
+static const char *voicecall_path[] = { "OFF", "RCV", "SPK", "HP", "BT", "HP_3POLE",};
+#if (defined FEATURE_VOIP)
+static const char *voipcall_path[] = {"OFF", "RCV", "SPK", "HP", "BT", "HP_3POLE", };
+#endif
 static const char *fmradio_path[] = { "FMR_OFF", "FMR_SPK", "FMR_HP", "FMR_SPK_MIX", "FMR_HP_MIX", "FMR_DUAL_MIX"};
 static const char *mic_path[] = { "Main Mic", "Hands Free Mic", };
 static const char *codec_tuning_control[] = {"OFF", "ON"};
@@ -292,7 +332,7 @@ static int wm8994_set_mic_path(struct snd_kcontrol *kcontrol,
 		return -EINVAL;
 	
 	audio_ctrl_mic_bias_gpio(1);
-	 wm8994->universal_mic_path[wm8994->rec_path ](codec);
+	wm8994->universal_mic_path[wm8994->rec_path ](codec);
 	return 0;
 }
 
@@ -380,7 +420,7 @@ static int wm8994_set_playback_path(struct snd_kcontrol *kcontrol,
 
 	if(wm8994->codec_state & CALL_ACTIVE)
 	{
-		wm8994->codec_state &= ~(CALL_ACTIVE);			
+		wm8994->codec_state &= ~(CALL_ACTIVE);
 
 		//For avoiding pop noise during end of call.			
 		val = wm8994_read(codec, WM8994_CLOCKING_1);
@@ -432,11 +472,15 @@ static int wm8994_set_call_path(struct snd_kcontrol *kcontrol,
 		case PLAYBACK_OFF :
 			DEBUG_LOG("Switching off output path\n");
 			break;
+
 		case SPK :
 		case RCV :
 		case HP :
 		case BT :
-			DEBUG_LOG("routing  voice path to  %s \n", mc->texts[path_num] );
+#if (defined FEATURE_3POLE_CALL_SUPPORT)
+		case HP_3POLE:
+#endif
+			DEBUG_LOG("routing VOICE PATH to %s", mc->texts[path_num] );
 			break;
 		
 		default:
@@ -464,6 +508,76 @@ static int wm8994_set_call_path(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
+#if (defined FEATURE_VOIP)
+static int wm8994_get_voipcall_path(struct snd_kcontrol *kcontrol,
+	struct snd_ctl_elem_value *ucontrol)
+{
+	DEBUG_LOG("");
+#if 0
+	while(call_path[i] != NULL) {
+		if(!strcmp(call_path[i], kcontrol->id.name) && ((wm8994_path >> 4) == i)) {
+			ucontrol->value.integer.value[0] = wm8994_path & 0xf;
+			break;
+		}
+		i++;
+	}
+#endif
+	return 0;
+}
+
+static int wm8994_set_voipcall_path(struct snd_kcontrol *kcontrol,
+        struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_codec *codec = snd_kcontrol_chip(kcontrol);
+	struct wm8994_priv *wm8994 = codec->private_data;	
+	struct soc_enum *mc = (struct soc_enum *)kcontrol->private_value;
+
+	int val;
+
+	// Get path value
+	int path_num = ucontrol->value.integer.value[0];
+	DEBUG_LOG("set_voipcall_path param %d", path_num);
+	
+	switch(path_num)
+	{
+		case OFF:
+			DEBUG_LOG("Switching off output path");
+			break;
+
+		case RCV:
+		case SPK:
+		case HP:
+		case BT:
+#if (defined FEATURE_3POLE_CALL_SUPPORT)			
+		case HP_3POLE:
+#endif
+			DEBUG_LOG("routing voip path to %s", mc->texts[path_num] );
+			break;
+		
+		default:
+			DEBUG_LOG_ERR("The voip path[%d] does not exists!", path_num);
+			return -ENODEV;
+			break;
+	}
+
+	if((wm8994->cur_path != path_num) || !(wm8994->codec_state & CALL_ACTIVE))
+	{
+		wm8994->codec_state |= CALL_ACTIVE;
+		wm8994->cur_path = path_num;
+		wm8994->universal_voipcall_path[wm8994->cur_path](codec);
+	}
+	else
+	{
+		//wm8994_write(codec, WM8994_AIF1_DAC1_FILTERS_1, WM8994_AIF1DAC1_UNMUTE);  	//AIF1DAC1 Unmute, Mono Mix diable, Fast Ramp
+		val = wm8994_read(codec, WM8994_AIF1_DAC1_FILTERS_1);
+		val &= ~(WM8994_AIF1DAC1_MUTE_MASK);
+		val |= (WM8994_AIF1DAC1_UNMUTE);
+		wm8994_write(codec, WM8994_AIF1_DAC1_FILTERS_1, val);
+	}
+
+	return 0;
+}
+#endif
 
 static int wm8994_get_fmradio_path(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
@@ -745,6 +859,9 @@ static const struct soc_enum path_control_enum[] = {
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(fmradio_path),fmradio_path), 
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(codec_tuning_control), codec_tuning_control), 
 	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(codec_status_control), codec_status_control), 
+#if (defined FEATURE_VOIP)	
+	SOC_ENUM_SINGLE_EXT(ARRAY_SIZE(voipcall_path),voipcall_path),
+#endif
 };
 
 
@@ -758,8 +875,8 @@ static const struct snd_kcontrol_new wm8994_snd_controls[] = {
 	SOC_WM899X_OUTPGA_SINGLE_R_TLV("Capture Volume",  WM8994_AIF1_ADC1_LEFT_VOLUME ,
                                          0, 0xEF, 0, digital_tlv_mic),
 
-	 /* Path Control */
-        SOC_ENUM_EXT("Playback Path", path_control_enum[0],
+	/* Path Control */
+	SOC_ENUM_EXT("Playback Path", path_control_enum[0],
                 wm8994_get_playback_path, wm8994_set_playback_path),
 
 	SOC_ENUM_EXT("Voice Call Path", path_control_enum[1],
@@ -781,6 +898,10 @@ static const struct snd_kcontrol_new wm8994_snd_controls[] = {
 	SOC_ENUM_EXT("Codec Status", path_control_enum[5],
 				wm8994_get_codec_status, wm8994_set_codec_status),
 
+#if (defined FEATURE_VOIP)
+	SOC_ENUM_EXT("VoIP Call Path", path_control_enum[6],
+                wm8994_get_voipcall_path, wm8994_set_voipcall_path),
+#endif
 } ;//snd_ctrls
 
 
@@ -857,9 +978,9 @@ static int configure_clock(struct snd_soc_codec *codec)
 	}
 
 	reg = wm8994_read(codec,WM8994_AIF1_CLOCKING_1);
-        reg &= ~WM8994_AIF1CLK_ENA ; //disable the clock
+	reg &= ~WM8994_AIF1CLK_ENA ; //disable the clock
 	reg &= ~WM8994_AIF1CLK_SRC_MASK; 
-        wm8994_write(codec, WM8994_AIF1_CLOCKING_1, reg);
+	wm8994_write(codec, WM8994_AIF1_CLOCKING_1, reg);
 
 	/* This should be done on init() for bypass paths */
 	switch (wm8994->sysclk_source) {
@@ -995,10 +1116,10 @@ static int configure_clock(struct snd_soc_codec *codec)
 	return 0;
 }
 
+#if 0
 static int wm8994_set_bias_level(struct snd_soc_codec *codec,
 				 enum snd_soc_bias_level level)
 {
-#if 0
 	DEBUG_LOG("");
 
 	switch (level) {
@@ -1066,8 +1187,8 @@ static int wm8994_set_bias_level(struct snd_soc_codec *codec,
 	codec->bias_level = level;
 
 	return 0;
-#endif
 }
+#endif
 
 static int wm8994_set_sysclk(struct snd_soc_dai *codec_dai,
 			     int clk_id, unsigned int freq, int dir)
@@ -1188,7 +1309,6 @@ static int wm8994_set_dai_fmt(struct snd_soc_dai *dai,
 		return -EINVAL;
 	}
 
-	aif1 |= 0x4000;
 	wm8994_write(codec,WM8994_AIF1_CONTROL_1, aif1);
 	wm8994_write(codec,WM8994_AIF1_MASTER_SLAVE, aif2);
 	wm8994_write( codec,WM8994_AIF1_CONTROL_2, 0x4000);
@@ -1377,9 +1497,25 @@ static int wm8994_startup(struct snd_pcm_substream *substream, struct snd_soc_da
 		DEBUG_LOG("Turn on codec!! Power state =[%d]", wm8994->power_state);
 
 		wm8994_write(codec, WM8994_POWER_MANAGEMENT_1, 0x3 << WM8994_VMID_SEL_SHIFT | WM8994_BIAS_ENA);
+#if defined(CONFIG_ARIES_NTT) || defined(CONFIG_ARIES_LATONA)
+		msleep(50);
+#else
 		msleep(20);
-
+#endif
 		wm8994_write(codec, WM8994_POWER_MANAGEMENT_1, WM8994_VMID_SEL_NORMAL | WM8994_BIAS_ENA);
+
+#if defined(CONFIG_ARIES_NTT)
+		//ssong100903. WM8994 Applications Issue Report CE000681 Changing digital path or clock enable bits when active may result in no sound output 
+		wm8994_write(codec, 0X05, 0X3303); // AIF1DAC1L/R_ENA, DAC1L/R_ENA
+
+		//ssong100903. Wolfson Clock MUX S/W Selection Patch
+		/*
+		wm8994_write(codec, 0X102, 0X0003);
+		wm8994_write(codec, 0X817, 0X0000);
+		wm8994_write(codec, 0X102, 0X0000);
+		*/
+#endif //#if defined(CONFIG_ARIES_NTT)
+
 		wm8994_write(codec,WM8994_OVERSAMPLING, 0x0000);
 	}
 	else
@@ -1608,7 +1744,11 @@ static int wm8994_init(struct wm8994_priv *wm8994_private)
 	wm8994->universal_playback_path = universal_wm8994_playback_paths;
 	wm8994->universal_voicecall_path = universal_wm8994_voicecall_paths;
 	wm8994->universal_mic_path = universal_wm8994_mic_paths;
+#if (defined FEATURE_VOIP)
+	wm8994->universal_voipcall_path = universal_wm8994_voipcall_paths;
+#endif
 	wm8994->stream_state = PCM_STREAM_DEACTIVE;
+	wm8994->codec_state = DEACTIVE;
 	wm8994->cur_path = PLAYBACK_OFF;
 	wm8994->rec_path = MIC_OFF;
 	wm8994->fmradio_path = FMR_OFF;
@@ -1619,9 +1759,13 @@ static int wm8994_init(struct wm8994_priv *wm8994_private)
 	wm8994->ringtone_active = OFF;
 
 	wm8994_write(codec,WM8994_SOFTWARE_RESET, 0x0000);
-
+	
 	wm8994_write(codec, WM8994_POWER_MANAGEMENT_1, 0x3 << WM8994_VMID_SEL_SHIFT | WM8994_BIAS_ENA);
+#if defined(CONFIG_ARIES_NTT) || defined(CONFIG_ARIES_LATONA)
+	msleep(50);
+#else
 	msleep(10);
+#endif
 	wm8994_write(codec, WM8994_POWER_MANAGEMENT_1, WM8994_VMID_SEL_NORMAL | WM8994_BIAS_ENA);
 
 	wm8994->hw_version = wm8994_read(codec, 0x100);	// Read Wm8994 version.
@@ -1807,14 +1951,11 @@ static int wm8994_add_i2c_device(struct platform_device *pdev,
 	ret = i2c_add_driver(&wm8994_i2c_driver);
 	if (ret != 0) {
 		dev_err(&pdev->dev, "can't add i2c driver\n");
+		i2c_del_driver(&wm8994_i2c_driver);
 		return ret;
 	}
 	
 	return 0;
-
-err_driver:
-	i2c_del_driver(&wm8994_i2c_driver);
-	return -ENODEV;
 }
 #endif
 
@@ -1822,8 +1963,6 @@ static int wm8994_probe(struct platform_device *pdev)
 {
 	struct snd_soc_device *socdev = platform_get_drvdata(pdev);
 	struct wm8994_setup_data *setup;
-	struct snd_soc_codec *codec;
-	struct wm8994_priv *wm8994;
 	int ret = 0;
 
 	pr_info("WM8994 Audio Codec %s\n", WM8994_VERSION);
@@ -1923,9 +2062,8 @@ static int wm8994_pcm_remove(struct platform_device *pdev)
 #ifdef CONFIG_PM
 static int wm8994_suspend(struct platform_device *pdev,pm_message_t msg )
 {
-	struct snd_soc_device *socdev = platform_get_drvdata(pdev);
-        struct snd_soc_codec *codec = wm8994_codec;
-        struct wm8994_priv *wm8994 = codec->private_data;
+	struct snd_soc_codec *codec = wm8994_codec;
+	struct wm8994_priv *wm8994 = codec->private_data;
 
 	DEBUG_LOG("Codec State = [0x%X], Stream State = [0x%X]", wm8994->codec_state, wm8994->stream_state);
 	
@@ -1947,7 +2085,6 @@ static int wm8994_suspend(struct platform_device *pdev,pm_message_t msg )
 
 static int wm8994_resume(struct platform_device *pdev)
 {
-	struct snd_soc_device *socdev = platform_get_drvdata(pdev);
 	struct snd_soc_codec *codec = wm8994_codec;
 	struct wm8994_priv *wm8994 = codec->private_data;
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Linux Wireless Extensions support
  *
  * Copyright (C) 1999-2010, Broadcom Corporation
@@ -88,6 +88,7 @@ typedef const struct si_pub  si_t;
 #define WL_IW_USE_ISCAN  1
 #define ENABLE_ACTIVE_PASSIVE_SCAN_SUPPRESS  1
 
+#define RSSI_OFFSET	8
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)) && 1
 	struct mutex  g_wl_ss_scan_lock; 
@@ -876,7 +877,108 @@ wl_iw_set_btcoex_dhcp(
 
 	return error;
 }
+int wl_iw_get_associnfo(struct net_device *dev,	
+    struct iw_request_info *info,
+	union iwreq_data *wrqu,
+	char *extra)
+{
+  char buf[1024]; 
+  char eabuf[ETHER_ADDR_STR_LEN];
+  uchar *passoc_ie;
+  uint req_ies_len = 0;
+  wl_assoc_info_t assoc_info;
+  int ret=0,i=0;
+  bzero(buf,sizeof(buf));
+  memset(extra,0,wrqu->data.length);
 
+  
+  WL_TRACE(("\%s : enter\n",__FUNCTION__));
+ 
+  if ((ret = dev_wlc_bufvar_get(dev,"assoc_info",buf,sizeof(buf))) < 0) {
+     
+      return ret;
+  }
+
+  memcpy(&assoc_info,buf,sizeof(wl_assoc_info_t));
+  assoc_info.req_len = htod32(assoc_info.req_len);
+  assoc_info.resp_len = htod32(assoc_info.resp_len);
+  assoc_info.flags = htod32(assoc_info.flags);
+  memset(buf,0,sizeof(buf));
+
+
+  if (assoc_info.req_len) {
+
+       
+		req_ies_len = assoc_info.req_len - sizeof(struct dot11_assoc_req);
+
+		if (assoc_info.flags & WLC_ASSOC_REQ_IS_REASSOC) {
+			WL_TRACE(("\treassoc bssid %s\n",
+		    bcm_ether_ntoa(&assoc_info.reassoc_bssid,eabuf)));
+			req_ies_len -= ETHER_ADDR_LEN;
+		}
+     
+       if ((ret = dev_wlc_bufvar_get(dev,"assoc_req_ies",buf,sizeof(buf))) < 0) {
+     
+             return ret;
+        }
+       memset(extra,0,sizeof(*extra));
+       extra += sprintf(extra,"length=%d ",req_ies_len) + 1;
+       bcopy(buf,extra,req_ies_len);
+       WL_TRACE(("Found ReqIEs length : %d\n",req_ies_len));
+        for (i = 1, passoc_ie = extra; i <= req_ies_len ; i++) {
+
+                WL_TRACE(("0x%02x ",*passoc_ie++));
+                if (!(i%8))
+                    WL_TRACE(("\n\t"));
+        }
+          
+      
+  }
+
+
+  return ret;
+}
+
+static int
+wl_iw_set_pmk(
+	struct net_device *dev,
+	struct iw_request_info *info,
+	union iwreq_data *wrqu,
+	char *extra
+) {
+
+    uchar pmk[33];
+    int error = 0;
+    int i = 0;
+	bzero(pmk,33);
+    WL_TRACE(("%s : enter\n",__FUNCTION__));
+    memcpy((char *)pmk, extra + strlen("SET_PMK "), 32);
+    if ((error = dev_wlc_bufvar_set(dev, "okc_info_pmk", pmk ,32))) {
+          WL_ERROR(("failed to set pmk for ex11r error : %d\n",error));
+    }
+    WL_TRACE(("PMK is "));
+	for (i = 0 ; i < 32;i++)
+	  WL_TRACE(("%02X ",pmk[i]));
+	WL_TRACE(("\n"));
+	return error;
+}
+
+int wl_iw_okc_enable(struct net_device *dev,	
+    struct iw_request_info *info,
+	union iwreq_data *wrqu,
+	char *extra){
+
+
+	int error = 0;
+	char okc_enable = 0;
+
+	strncpy((char *)&okc_enable, extra + strlen("OKC_ENABLE") +1, 1);
+	if ((error = dev_wlc_intvar_set(dev, "okc_enable",okc_enable-'0'))) {
+      WL_ERROR(("failed to set pmk for ex11r error : %d\n",error));
+	}
+
+	return error;
+}
 int
 wl_format_ssid(char* ssid_buf, uint8* ssid, int ssid_len)
 {
@@ -945,7 +1047,7 @@ wl_iw_get_rssi(
 
 	if (g_onoff == G_WLAN_SET_ON) {
 		error = dev_wlc_ioctl(dev, WLC_GET_RSSI, &scb_val, sizeof(scb_val_t));
-		rssi = dtoh32(scb_val.val);
+		rssi = dtoh32(scb_val.val) + RSSI_OFFSET;
 
 		error = dev_wlc_ioctl(dev, WLC_GET_SSID, &ssid, sizeof(ssid));
 
@@ -2131,8 +2233,8 @@ wl_iw_iscan_get_aplist(
 			
 			memcpy(addr[dwrq->length].sa_data, &bi->BSSID, ETHER_ADDR_LEN);
 			addr[dwrq->length].sa_family = ARPHRD_ETHER;
-			qual[dwrq->length].qual = rssi_to_qual(dtoh16(bi->RSSI));
-			qual[dwrq->length].level = 0x100 + dtoh16(bi->RSSI);
+			qual[dwrq->length].qual = rssi_to_qual(dtoh16(bi->RSSI) + RSSI_OFFSET);
+			qual[dwrq->length].level = 0x100 + dtoh16(bi->RSSI) + RSSI_OFFSET;
 			qual[dwrq->length].noise = 0x100 + bi->phy_noise;
 
 			
@@ -3111,8 +3213,8 @@ wl_iw_get_scan_prep(
 
 		
 		iwe.cmd = IWEVQUAL;
-		iwe.u.qual.qual = rssi_to_qual(dtoh16(bi->RSSI));
-		iwe.u.qual.level = 0x100 + dtoh16(bi->RSSI);
+		iwe.u.qual.qual = rssi_to_qual(dtoh16(bi->RSSI) + RSSI_OFFSET);
+		iwe.u.qual.level = 0x100 + dtoh16(bi->RSSI) + RSSI_OFFSET;
 		iwe.u.qual.noise = 0x100 + bi->phy_noise;
 		event = IWE_STREAM_ADD_EVENT(info, event, end, &iwe, IW_EV_QUAL_LEN);
 
@@ -3442,8 +3544,8 @@ wl_iw_iscan_get_scan(
 
 		
 		iwe.cmd = IWEVQUAL;
-		iwe.u.qual.qual = rssi_to_qual(dtoh16(bi->RSSI));
-		iwe.u.qual.level = 0x100 + dtoh16(bi->RSSI);
+		iwe.u.qual.qual = rssi_to_qual(dtoh16(bi->RSSI) + RSSI_OFFSET);
+		iwe.u.qual.level = 0x100 + dtoh16(bi->RSSI) + RSSI_OFFSET;
 		iwe.u.qual.noise = 0x100 + bi->phy_noise;
 		event = IWE_STREAM_ADD_EVENT(info, event, end, &iwe, IW_EV_QUAL_LEN);
 
@@ -6090,6 +6192,12 @@ static int wl_iw_set_priv(
 			set_ap_mac_list(dev, (extra + PROFILE_OFFSET));
 	    }
 #endif 
+            else if (strnicmp(extra, "SET_PMK",strlen("SET_PMK")) == 0)
+                wl_iw_set_pmk(dev,info, (union iwreq_data *)dwrq,extra);
+	    else if (strnicmp(extra, "GET_ASSOC_INFO",strlen("GET_ASSOC_INFO")) == 0)
+                wl_iw_get_associnfo(dev,info, (union iwreq_data *)dwrq, extra);
+	    else if (strnicmp(extra, "OKC_ENABLE",strlen("OKC_ENABLE")) == 0)
+                wl_iw_okc_enable(dev,info, (union iwreq_data *)dwrq, extra);
 	    else {
 			WL_TRACE(("Unkown PRIVATE command %s\n", extra));
 			snprintf(extra, MAX_WX_STRING, "OK");
@@ -6596,6 +6704,24 @@ wl_iw_event(struct net_device *dev, wl_event_msg_t *e, void* data)
 
 	
 	switch (event_type) {
+#ifdef ROAM_TEST_CODE
+	case WLC_E_ROAM:
+		printf("SSS: ROAM ~~~~~~~~~~~~~~~~~~~~~\r\n");
+		cmd = 0x8C0A;
+		break;
+	case WLC_E_ROAM_START:
+		printf("SSS: ROAM START~~~~~~~~~~~~~~~~~~~~~\r\n");
+		cmd = 0x8C0A;
+		break;
+    	case WLC_E_ROAM_PREP:
+		printf("SSS: ROAM PREP~~~~~~~~~~~~~~~~~~~~~\r\n");
+		cmd = 0x8C0A;
+		break;
+	case WLC_E_JOIN_START:
+		printf("SSS: ROAM JOIN START~~~~~~~~~~~~~~~~~~~~~\r\n");			
+		cmd = 0x8C0A;
+	        break;
+#endif
 #if defined(SOFTAP)
 	case WLC_E_PRUNE:
 		if (ap_cfg_running) {

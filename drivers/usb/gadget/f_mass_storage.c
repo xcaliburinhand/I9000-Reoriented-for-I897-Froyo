@@ -75,7 +75,6 @@
 
 #include <linux/platform_device.h> //denis
 
-
 #include "f_mass_storage.h"
 #include "gadget_chips.h"
 #include "fsa9480_i2c.h"
@@ -91,10 +90,20 @@
 /* TODO: flush after every 4 meg of writes to avoid excessive block level caching */
 #define MAX_UNFLUSHED_BYTES (4 * 1024 * 1024)
 #undef MAX_UNFLUSHED_BYTES 
+
 /*-------------------------------------------------------------------------*/
 
 #define DRIVER_NAME		"usb_mass_storage"
 #define MAX_LUNS		8
+
+#define UMS_DISK_LUNS	2
+//#define _ENABLE_CDFS_
+#ifdef _ENABLE_CDFS_
+#define UMS_CDROM_LUNS	1
+#define UMS_CDROM_ID	0
+#else
+#define UMS_CDROM_LUNS	0
+#endif
 
 static const char shortname[] = DRIVER_NAME;
 
@@ -160,6 +169,10 @@ struct platform_device* fsg_platform_device = NULL; //denis
 
 extern int UmsCDEnable;
 static int UmsInitStatus=0;
+
+#ifdef _SUPPORT_SAMSUNG_AUTOINSTALLER_
+extern bool IsKiesCurrentUsbStatus();
+#endif
 
 static struct {
 	char		*file[MAX_LUNS];
@@ -787,7 +800,20 @@ static int fsg_function_setup(struct usb_function *f,
 				value = -EDOM;
 				break;
 			}
+
+#ifdef _SUPPORT_SAMSUNG_AUTOINSTALLER_
+			if( IsKiesCurrentUsbStatus() )
+			{
+				printk("[USB:UMS] %s, CurrentUsbStatus is KIES, return to PC fsg->nluns=1\n", __FUNCTION__);
+				*(u8 *)cdev->req->buf = 0;
+			}
+			else
+#endif
+			{
+				printk("[USB:UMS] %s, return to PC fsg->nluns=%d\n", __FUNCTION__, fsg->nluns);
 			*(u8 *)cdev->req->buf = fsg->nluns - 1;
+			}
+			
 			value = 1;
 			break;
 			
@@ -1370,12 +1396,19 @@ static int do_inquiry(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 	u8	*buf = (u8 *) bh->buf;
     struct lun		*curlun = fsg->curlun;
 
+#if 1 // samsung feature
+	static char vendor_id[9] = "SAMSUNG ";
+	static char product_disk_id[17];
+	static char product_cdrom_id[17];
+#else
 	static char vendor_id[] = "Android   ";
 	static char product_disk_id[] = "UMS DISK      ";
 	static char product_cdrom_id[] = "UMS CD-ROM    ";
+#endif
 
     DBG(fsg,"do_inquiry fsg->cdrom %d curlun->id %d\n",fsg->cdrom,curlun->id);
     printk("printk:do_inquiry fsg->cdrom %d curlun->id %d\n",fsg->cdrom,curlun->id);
+
 	if (!fsg->curlun) {		/* Unsupported LUNs are okay */
 		fsg->bad_lun_okay = 1;
 		memset(buf, 0, 36);
@@ -1385,44 +1418,72 @@ static int do_inquiry(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 
 	memset(buf, 0, 8);	/* Non-removable, direct-access device */
 
-	buf[0] = (curlun->id ? TYPE_DISK  : TYPE_CDROM);
+#if (UMS_CDROM_LUNS > 0)
+	buf[0] = (curlun->id == UMS_CDROM_ID ? TYPE_CDROM : TYPE_DISK);
+#else
+	buf[0] = TYPE_DISK;
+#endif
 
 	buf[1] = 0x80;	/* set removable bit */
 	buf[2] = 2;		/* ANSI SCSI level 2 */
 	buf[3] = 2;		/* SCSI-2 INQUIRY data format */
 	buf[4] = 31;		/* Additional length */
 				/* No special options */
-//by ss1
-#if 0
+
+#if 1 // samsung feature
+	/* Internal Device : Phone, External Device : Card*/
+	switch(curlun->id) {
+#if (UMS_CDROM_LUNS > 0)
+	case UMS_CDROM_ID:
+		strlcpy(product_cdrom_id, "UMS CD-ROM", 11);
+		break;
+#endif
+
+#if (UMS_DISK_LUNS > 1) // 2 : internal & external SD
+	case UMS_CDROM_LUNS:
+		#if defined(CONFIG_ARIES_NTT) //seok0.yoon
+		strlcpy(product_disk_id, "SC-02B", 7);
+#else
+		strlcpy(product_disk_id, "GT-I9000", 9);
+		#endif
+		break;
+
+	case (UMS_CDROM_LUNS + 1):
+		#if defined(CONFIG_ARIES_NTT) //seok0.yoon
+		strlcpy(product_disk_id, "SC-02B Card", 12);
+		#else
+		strlcpy(product_disk_id, "GT-I9000 Card", 14);
+		#endif
+		break;
+#else // 1 : external SD
+	case UMS_CDROM_LUNS:
+		#if defined(CONFIG_ARIES_NTT) //seok0.yoon
+		strlcpy(product_disk_id, "SC-02B Card", 12);
+		#else
+		strlcpy(product_disk_id, "GT-I9000 Card", 14);
+		#endif
+		break;
+#endif
+
+	default:
+		break;
+  }
+
+#if (UMS_CDROM_LUNS > 0)
+	sprintf(buf + 8, "%-8s%-16s%04x", vendor_id,
+			(curlun->id == UMS_CDROM_ID ? product_cdrom_id : product_disk_id),
+			fsg->release);
+#else
+	sprintf(buf + 8, "%-8s%-16s%04x", vendor_id, product_disk_id,
+			fsg->release);
+#endif
+#else
 	sprintf(buf + 8, "%-8s%-16s%04x", fsg->vendor,
 			fsg->product, fsg->release);
-#else
-	sprintf(buf + 8, "%-8s%-16s%04x", vendor_id,
-			(curlun->id ? product_disk_id : product_cdrom_id),
-			fsg->release);
+#endif
 
-if(fsg->lun==1)
-  {  
-#if defined(CONFIG_ARIES_EUR)
-   sprintf(buf + 8, "%-8s%-16s%04x", "SAMSUNG ", "GT-I9000 ", fsg->release);
-#elif defined(CONFIG_ARIES_NTT)
-   sprintf(buf + 8, "%-8s%-16s%04x", "SAMSUNG ", "SC-02B Card", fsg->release);
-#endif
-   printk("[USB:UMS] Buf+8:%s\n", buf+8);
-  }
-  else if(fsg->lun==2)
-  {
-#if defined(CONFIG_ARIES_EUR)
-   sprintf(buf + 8, "%-8s%-32s%04x", "SAMSUNG ", "GT-I9000 Card", fsg->release);
-#elif defined(CONFIG_ARIES_NTT)
-   sprintf(buf + 8, "%-8s%-16s%04x", "SAMSUNG ", "SC-02B       ", fsg->release);
-#endif
-   printk("[USB:UMS] Buf+8:%s\n", buf+8);
-  }
-#endif
 	return 36;
 }
-
 
 
 static void store_cdrom_address(u8 *dest, int msf, u32 addr)
@@ -1442,6 +1503,7 @@ static void store_cdrom_address(u8 *dest, int msf, u32 addr)
 		put_be32(dest, addr);
 	}
 }
+
 
 static int do_read_header(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 {
@@ -1653,6 +1715,8 @@ static int do_mode_sense(struct fsg_dev *fsg, struct fsg_buffhd *bh)
 
 static int do_start_stop(struct fsg_dev *fsg)
 {
+	printk("[UMS] WJ : %s\n", __FUNCTION__);
+	
 	struct lun	*curlun = fsg->curlun;
 	int		loej, start;
 
@@ -1668,6 +1732,56 @@ static int do_start_stop(struct fsg_dev *fsg)
 	start = fsg->cmnd[4] & 0x01;
 
 	if (loej) {
+
+#ifdef _SUPPORT_SAMSUNG_AUTOINSTALLER_
+		// WJ 2010.07.01
+		// KIES AutoInstaller
+		char name_buf[120];
+		char state_buf[120];
+		char *envp[3];
+		int env_offset = 0;
+
+
+		printk("\n[UMS] WJ : %s, eject request from the host\n\n", __FUNCTION__);
+
+		struct usb_composite_dev *cdev = fsg->function.config->cdev;
+
+		
+		if( cdev->gadget  )
+		{
+			snprintf(name_buf, sizeof(name_buf),"SWITCH_NAME=USB_MESSAGE");
+
+			printk("[UMS] WJ : %s,  name_buf = %s\n", __FUNCTION__, name_buf);
+			
+			envp[env_offset++] = name_buf;
+
+			printk("[UMS] WJ : %s,  envp[0]  = %s,  &envp[0]  = %x\n", __FUNCTION__, envp[0], envp[0]);
+
+			
+			snprintf(state_buf, sizeof(state_buf),"SWITCH_STATE=cd eject");
+
+			printk("[UMS] WJ : %s,  state_buf = %s\n", __FUNCTION__, state_buf);
+			
+			envp[env_offset++] = state_buf;
+
+			printk("[UMS] WJ : %s,  envp[1]  = %s,  &envp[1]  = %x\n", __FUNCTION__, envp[1], envp[1]);
+
+			envp[env_offset] = NULL;
+
+			if (!fsg->cdev->gadget->dev.class) {
+				fsg->cdev->gadget->dev.class = class_create(THIS_MODULE, "usb_msg");
+				if (IS_ERR(fsg->cdev->gadget->dev.class))
+					return PTR_ERR(fsg->cdev->gadget->dev.class);
+			}
+
+			kobject_uevent_env(&cdev->gadget->dev.kobj, KOBJ_CHANGE, envp);
+
+			printk("[UMS] WJ : %s, Send cd eject message to daemon\n", __FUNCTION__);
+
+		}
+		
+#endif
+		
 		/* eject request from the host */
 		if (backing_file_is_open(curlun)) {
 			close_backing_file(fsg, curlun);
@@ -2150,7 +2264,9 @@ static int do_scsi_command(struct fsg_dev *fsg)
     	break;
 
 	case SC_READ_HEADER:
-		if (curlun->id) goto unknown_cmnd;
+#if (UMS_CDROM_LUNS > 0)
+		if (curlun->id != UMS_CDROM_ID) goto unknown_cmnd;
+#endif
 		fsg->data_size_from_cmnd = get_be16(&fsg->cmnd[7]);
 		if ((reply = check_command(fsg, 10, DATA_DIR_TO_HOST,
 				(3<<7) | (0x1f<<1), 1,
@@ -2159,7 +2275,9 @@ static int do_scsi_command(struct fsg_dev *fsg)
 		break;
 
 	case SC_READ_TOC:
-		if (curlun->id)	goto unknown_cmnd;
+#if (UMS_CDROM_LUNS > 0)
+		if (curlun->id != UMS_CDROM_ID)	goto unknown_cmnd;
+#endif
 		fsg->data_size_from_cmnd = get_be16(&fsg->cmnd[7]);
 		if ((reply = check_command(fsg, 10, DATA_DIR_TO_HOST,
 				(7<<6) | (1<<1), 1,
@@ -2900,7 +3018,8 @@ static int open_backing_file(struct fsg_dev *fsg, struct lun *curlun,
 	}
 	num_sectors = size >> 9;	/* File size in 512-byte sectors */
 	min_sectors = 1;
-	if (!curlun->id) {
+#if (UMS_CDROM_LUNS > 0)
+	if (curlun->id == UMS_CDROM_ID) {
 		num_sectors &= ~3;	// Reduce to a multiple of 2048
 		min_sectors = 300*4;	// Smallest track is 300 frames
 		if (num_sectors >= 256*60*75*4) {
@@ -2910,6 +3029,7 @@ static int open_backing_file(struct fsg_dev *fsg, struct lun *curlun,
 					(int) num_sectors);
 		}
 	}
+#endif
 	if (num_sectors < min_sectors) {
 		LINFO(curlun, "file too small: %s\n", filename);
 		rc = -ETOOSMALL;
@@ -3156,19 +3276,25 @@ fsg_function_bind(struct usb_configuration *c, struct usb_function *f)
 
 	fsg->cdev = cdev;
 	DBG(fsg, "fsg_function_bind cdrom patch applied\n");
-    fsg->nluns = 3;
+#if 1 // samsung feature
+	fsg->nluns = UMS_CDROM_LUNS + UMS_DISK_LUNS;
+#endif
+
+
     printk(KERN_INFO "fsg_function_bind cdrom patch after fsg->nluns %d\n",fsg->nluns);
     
 	dev_attr_file.attr.mode = 0644;
 
 	/* Find out how many LUNs there should be */
 	i = fsg->nluns;
-	if (i == 0) {
+#if 0 // samsung feature
+	if (i == 0)
+		i = 1;
+#endif
 	if (i > MAX_LUNS) {
 		ERROR(fsg, "invalid number of LUNs: %d\n", i);
 		rc = -EINVAL;
 		goto out;
-	}
 	}
 
 	/* Create the LUNs, open their backing files, and register the
@@ -3185,11 +3311,11 @@ fsg_function_bind(struct usb_configuration *c, struct usb_function *f)
 		/* lun 0 : cdrom. read-only 
 		   lun 1 : internel storage. read-write 
 		   lun 2 : externel sd-card. read-write */
-		if (i == 0)
-			curlun->ro = 1;
-		else
 		curlun->ro = 0;
 		curlun->id = i;
+#if (UMS_CDROM_LUNS > 0)
+		curlun->ro = (curlun->id == UMS_CDROM_ID ? 1 : 0);
+#endif
 
 		curlun->dev.release = lun_release;
 		if (fsg->pdev)

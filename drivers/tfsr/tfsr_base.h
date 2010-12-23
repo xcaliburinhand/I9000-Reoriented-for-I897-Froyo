@@ -9,7 +9,7 @@
  *---------------------------------------------------------------------------*
 */
 /**
- * @version	RFS_3.0.0_b035_LinuStoreIII_1.2.0_b035_FSR_1.2.1p1_b129_RC
+ * @version	LinuStoreIII_1.2.0_b038-FSR_1.2.1p1_b139_RTM
  * @file	drivers/tfsr/tfsr_base.h
  * @brief	The most commom part and some inline functions to mainipulate
  *		the FSR instance (volume specification, partition table)

@@ -52,6 +52,7 @@ struct s3c_gpio_cfg {
 
 	int		(*set_pin)(struct s3c_gpio_chip *chip, unsigned offs,
 				    s3c_gpio_pull_t level);
+	s3c_gpio_pull_t (*get_pin)(struct s3c_gpio_chip *chip, unsigned offs);
 
 	unsigned (*get_config)(struct s3c_gpio_chip *chip, unsigned offs);
 	int	 (*set_config)(struct s3c_gpio_chip *chip, unsigned offs,
@@ -72,6 +73,14 @@ extern int s3c_gpio_setpin(unsigned int pin, s3c_gpio_pull_t level);
 extern int s3c_gpio_set_drvstrength(unsigned int pin, unsigned int config);
 extern int s3c_gpio_set_slewrate(unsigned int pin, unsigned int config);
 
+/**
+ *  * s3c_gpio_getpin() - get the level of a gpio pin.
+ *   * @pin: The pin number.
+ *    *
+ *     * This function gets the level for the
+ *      * specified pin. It will return either 0 or 1
+ *       */
+extern s3c_gpio_pull_t s3c_gpio_getpin(unsigned int pin);
 
 #define S3C_GPIO_SPECIAL_MARK	(0xfffffff0)
 #define S3C_GPIO_SPECIAL(x)	(S3C_GPIO_SPECIAL_MARK | (x))

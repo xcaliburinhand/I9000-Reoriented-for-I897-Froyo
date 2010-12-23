@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Broadcom Dongle Host Driver (DHD), Linux-specific network interface
  * Basically selected code segments from usb-cdc.c and usb-rndis.c
  *
@@ -346,10 +346,14 @@ extern int dhd_dongle_memsize;
 module_param(dhd_dongle_memsize, int, 0);
 
 /* Contorl fw roaming */
+#ifdef ROAM_TEST_CODE
+uint dhd_roam = 0;
+#else 
 #ifdef CUSTOMER_HW2
 uint dhd_roam = 0;
 #else
 uint dhd_roam = 1;
+#endif
 #endif
 
 /* Control radio state */
@@ -2297,6 +2301,13 @@ dhd_bus_start(dhd_pub_t *dhdp)
 	setbit(dhdp->eventmask, WLC_E_TXFAIL);
 	setbit(dhdp->eventmask, WLC_E_JOIN_START);
 	setbit(dhdp->eventmask, WLC_E_SCAN_COMPLETE);
+
+#ifdef ROAM_TEST_CODE
+	setbit(dhdp->eventmask, WLC_E_JOIN_START);
+	setbit(dhdp->eventmask, WLC_E_ROAM_START);
+	setbit(dhdp->eventmask, WLC_E_ROAM);
+	setbit(dhdp->eventmask, WLC_E_ROAM_PREP);
+#endif
 
 	dhdp->pktfilter_count = 1;
 	/* Setup filter to allow only unicast */

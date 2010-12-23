@@ -52,7 +52,9 @@ struct timeval mfc_wakeup_after;
 static unsigned int mfc_int_type = 0;
 static unsigned int mfc_disp_err_status = 0;
 static unsigned int mfc_dec_err_status = 0;
+static bool irq_sync;
 static DECLARE_WAIT_QUEUE_HEAD(mfc_wait_queue);
+static DEFINE_SPINLOCK(mfc_irq_lock);
 
 #if !defined(MFC_POLLING)
 irqreturn_t mfc_irq(int irq, void *dev_id)
@@ -76,13 +78,14 @@ irqreturn_t mfc_irq(int irq, void *dev_id)
 		((int_reason & R2H_CMD_INIT_BUFFERS_RET) == R2H_CMD_INIT_BUFFERS_RET)      ||
 		((int_reason & R2H_CMD_DECODE_ERR_RET)   == R2H_CMD_DECODE_ERR_RET)        ||
 		((int_reason & R2H_CMD_SLICE_DONE_RET)   == R2H_CMD_SLICE_DONE_RET)        ||
-		((int_reason & R2H_CMD_ERROR_RET) == R2H_CMD_ERROR_RET))
-	{
+		((int_reason & R2H_CMD_ERROR_RET) == R2H_CMD_ERROR_RET)) {
 		mfc_int_type = int_reason;
-		wake_up_interruptible(&mfc_wait_queue);
-	}
-	else
+		irq_sync = true;
+		wake_up(&mfc_wait_queue);
+	} else {
+		irq_sync = false;
 		mfc_info("Strange Interrupt !! : %d\n", int_reason);
+	}
 
 
 	WRITEL(0, MFC_RISC_HOST_INT);
@@ -106,6 +109,7 @@ int mfc_wait_for_done(mfc_wait_done_type command)
 {
 	unsigned int nwait_time = 100;	
 	unsigned int ret_val = 1;
+        unsigned long flags;
 	
 	if((command == R2H_CMD_CLOSE_INSTANCE_RET) ||
 	   (command == R2H_CMD_OPEN_INSTANCE_RET) ||
@@ -126,7 +130,6 @@ int mfc_wait_for_done(mfc_wait_done_type command)
 	timeo += 20;    /* waiting for 100ms */
 #endif
 
-	//set_user_nice(current, -20);
 #if defined(MFC_REQUEST_TIME)
 	do_gettimeofday(&mfc_wakeup_before);
 	if (mfc_wakeup_before.tv_usec - mfc_wakeup_after.tv_usec < 0)
@@ -159,7 +162,7 @@ int mfc_wait_for_done(mfc_wait_done_type command)
 	if (ret_val == 0)
 	   printk("MFC timeouted!\n");
 #else
-	if (interruptible_sleep_on_timeout(&mfc_wait_queue, nwait_time) == 0)
+	if (wait_event_timeout(mfc_wait_queue, irq_sync, nwait_time) == 0) 
 	{
 		ret_val = 0;
 		mfc_err("Interrupt Time Out(Cmd: %d)	(Ver: 0x%08x) (0x64: 0x%08x) (0xF4: 0x%08x) (0x80: 0x%08x)\n", command, READL(0x58), READL(0x64), READL(0xF4),READL(0x80));
@@ -180,6 +183,9 @@ int mfc_wait_for_done(mfc_wait_done_type command)
 		mfc_err("Interrupt Error Returned (%d) waiting for (%d)\n", mfc_int_type, command);
 	}
 #endif
+	spin_lock_irqsave(&mfc_irq_lock, flags);
+	irq_sync = false;
+	spin_unlock_irqrestore(&mfc_irq_lock, flags);
 
 #if defined(MFC_REQUEST_TIME)
 	do_gettimeofday(&mfc_wakeup_after);

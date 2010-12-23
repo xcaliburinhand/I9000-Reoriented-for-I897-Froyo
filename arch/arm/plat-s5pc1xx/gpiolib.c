@@ -157,7 +157,8 @@ static struct s3c_gpio_cfg gpio_cfg = {
 	.set_config	= s3c_gpio_setcfg_s3c64xx_4bit,
 	.set_pull	= s3c_gpio_setpull_updown,
 	.get_pull	= s3c_gpio_getpull_updown,
-	.set_pin	= s3c_gpio_setpin_updown,	
+	.set_pin	= s3c_gpio_setpin_updown,
+	.get_pin	= s3c_gpio_getpin_updown,
 };
 
 static struct s3c_gpio_cfg gpio_cfg_eint = {
@@ -165,14 +166,16 @@ static struct s3c_gpio_cfg gpio_cfg_eint = {
 	.set_config	= s3c_gpio_setcfg_s3c64xx_4bit,
 	.set_pull	= s3c_gpio_setpull_updown,
 	.get_pull	= s3c_gpio_getpull_updown,
-	.set_pin	= s3c_gpio_setpin_updown,	
+	.set_pin	= s3c_gpio_setpin_updown,
+	.get_pin	= s3c_gpio_getpin_updown,
 };
 
 static struct s3c_gpio_cfg gpio_cfg_noint = {
 	.set_config	= s3c_gpio_setcfg_s3c64xx_4bit,
 	.set_pull	= s3c_gpio_setpull_updown,
 	.get_pull	= s3c_gpio_getpull_updown,
-	.set_pin	= s3c_gpio_setpin_updown,	
+	.set_pin	= s3c_gpio_setpin_updown,
+	.get_pin	= s3c_gpio_getpin_updown,
 };
 
 static struct s3c_gpio_chip s5pc100_gpio_chips[] = {

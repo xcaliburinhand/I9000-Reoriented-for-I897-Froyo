@@ -161,8 +161,10 @@ int s3cfb_set_clock(struct s3cfb_global *ctrl)
 
 	/* fixed clock source: hclk */
 	cfg = readl(ctrl->regs + S3C_VIDCON0);
+
 	cfg &= ~(S3C_VIDCON0_CLKSEL_MASK | S3C_VIDCON0_CLKVALUP_MASK |
 		S3C_VIDCON0_VCLKEN_MASK | S3C_VIDCON0_CLKDIR_MASK);
+
 	cfg |= (S3C_VIDCON0_CLKVALUP_ALWAYS | S3C_VIDCON0_VCLKEN_NORMAL |
 		S3C_VIDCON0_CLKDIR_DIVIDED);
 
@@ -196,7 +198,7 @@ int s3cfb_set_clock(struct s3cfb_global *ctrl)
 	cfg |= S3C_VIDCON0_CLKVAL_F(div - 1);
 	writel(cfg, ctrl->regs + S3C_VIDCON0);
 
-	dev_dbg(ctrl->dev, "parent clock: %d, vclk: %d, vclk div: %d\n",
+	dev_info(ctrl->dev, "parent clock: %d, vclk: %d, vclk div: %d\n",
 			src_clk, vclk, div);
 
 	return 0;

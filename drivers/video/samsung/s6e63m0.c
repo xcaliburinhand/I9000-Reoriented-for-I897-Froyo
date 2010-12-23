@@ -27,9 +27,14 @@ const unsigned short s6e63m0_SEQ_DISPLAY_ON[] = {
 };
 
 const unsigned short s6e63m0_SEQ_DISPLAY_OFF[] = {
-	//insert
+#if defined(CONFIG_ARIES_LATONA)
+	0x028,
+	SLEEPMSEC, 	27,  // more than 25ms
+	ENDDEF, 0x0000
+#else
 	0x028,
 	ENDDEF, 0x0000
+#endif
 };
 
 const unsigned short s6e63m0_SEQ_STANDBY_ON[] = {
@@ -43,6 +48,192 @@ const unsigned short s6e63m0_SEQ_STANDBY_OFF[] = {
 	SLEEPMSEC, 	120,
 	ENDDEF, 0x0000
 };
+
+#if defined(CONFIG_ARIES_LATONA)
+
+// Hydis Panel (nt35510)
+const unsigned short nt35510_SEQ_SETTING[] = {
+	SLEEPMSEC, 10,
+	//panel setting
+	0xFF,
+	0x1AA, 0x155, 0x125, 0x101,
+
+	0xFA,
+	0x100, 0x180, 0x100, 0x100, 0x100, 0x100, 0x130, 0x102, 0x120, 0x184,
+	0x10F, 0x10F, 0x120, 0x140, 0x140, 0x100, 0x100, 0x100, 0x100, 0x100,
+	0x100, 0x100, 0x100, 0x100, 0x100, 0x100, 0x100, 0x100, 0x13F, 0x1A0,
+	0x130,
+
+	0xF3,
+	0x100, 0x132, 0x100, 0x138, 0x100, 0x108, 0x111, 0x100,
+
+	// Enable CMD2_Page1
+
+	0xF0,
+	0x155, 0x1AA, 0x152, 0x108, 0x101,
+
+	// AVDD					
+	0xB6, 0x104, 0x104, 0x104,
+/*	 delete, because setting-value is not applied at here. so the 0xB0 register is set again after Enable CMD2_Page0
+	0xB0, 0x105, 0x105, 0x105,
+*/
+
+	// VGH
+
+	0xBF,
+	0x101,
+
+	0xB9,
+	0x134, 0x134, 0x134,
+
+	0xB3,
+	0x10A, 0x10A, 0x10A,
+
+	// VGL
+
+	0xBA,
+	0x124, 0x124, 0x124,
+
+	0xB5,
+	0x108, 0x108, 0x108,
+
+	// VCOM
+
+	0xBE,
+	0x100, 0x150,
+
+	// Enable CMD2_Page0
+
+	0xF0,
+	0x155, 0x1AA, 0x152, 0x108, 0x100,
+
+	// Hydis Initial
+
+//moon
+	0xB0,
+	0x104, 0x100, 0x100, 0x100, 0x100,
+	
+	0xB1,
+	0x1CC, 0x100,
+
+	0xBC,
+	0x100, 0x100, 0x100,
+
+	0xB8,
+	0x101, 0x107, 0x107, 0x107,
+
+	0xCC,
+	0x101, 0x13F, 0x13F,
+
+	0xB3, 0x100,
+
+//flip
+	0x36, 0x103,
+
+//pwm
+	0x51, 0x17f,
+	0x53, 0x124,
+
+	ENDDEF, 0x0000
+};
+// Sony Panel (nt35580)
+const unsigned short nt35580_SEQ_SETTING[] = {
+		// SET_PIXEL_FORMAT
+		0x3A, 
+		0x177, // 24 bpp
+	
+		// RGBCTRL
+		0x3B,
+		// 0x103, // RGB Mode1, DE is sampled at the rising edge of PCLK, DP-rising edge, EP- hi active, HSP-low active, VSP-low active
+		0x107, // RGB Mode1, DE is sampled at the rising edge of PCLK, DP-rising edge, EP- low active, HSP-low active, VSP-low active
+		0x10A,
+		0x10E, 
+		0x10A, 
+		0x10A,
+		
+		// SET_HORIZONTAL_ADDRESS (Frame Memory Area define)
+		0x2A, 
+		0x100, 
+		0x100, 
+		0x101,	// 480x800
+		0x1DF,	// 480x800 
+		
+		// SET_VERTICAL_ADDRESS  (Frame Memory Area define)
+		0x2B, 
+		0x100,
+		0x100, 
+		0x103,	// 480x800
+		0x11F,	// 480x800
+		// SET_ADDRESS_MODE 
+	//	0x36, 0x100, 			// MY(0)-Increase in vertical, MX(0)-Increase in vertical, MV(0)-address counter is updated automatically to Horizontal Direction
+							// RGB(0)-RGB Panel, CRL(0)-Horizontal Refresh Order :left->right
+							// CTB(0)-Verizontal Refresh Order:top->bottom
+		0x36, 
+		0x1D4, // fix tearing 0x1C0, 				// MY(1)-Decrease in vertical, MX(1)-Decrease in vertical, MV(0)-address counter is updated automatically to Horizontal Direction
+							// RGB(0)-RGB Panel, CRL(0)-Horizontal Refresh Order :left->right
+							// CTB(0)-Verizontal Refresh Order:top->bottom
+	
+		SLEEPMSEC, 30, // recommend by Sony-LCD 25,
+	
+		// SLPOUT
+		0x11,
+	
+		SLEEPMSEC, 155, // recommend by Sony 150, 
+	
+#if 0
+		// WRDISBV
+		0x51, 
+		0x1FF,  // the highest brightness
+#endif	
+		// WRCTRLD-1
+		0x55, 
+		0x100,	// CABC Off   1: UI-Mode, 2:Still-Mode, 3:Moving-Mode
+	
+		// WRCABCMB
+		0x5E, 
+		0x100, // Minimum Brightness Value Setting 0:the lowest, 0xFF:the highest
+
+		// WRCTRLD-2
+		0x53, 
+		0x12C, 		// BCTRL(1)-PWM Output Enable, A(0)-LABC Off, DD(1)-Enable Dimming Function Only for CABC, BL(1)-turn on Backlight Control without dimming effect
+
+		// DISPLAY ON
+//		0x29,
+
+	ENDDEF, 0x0000		
+};
+
+const unsigned short nt35580_SEQ_SLEEP_IN[] = {
+	0x010,
+	SLEEPMSEC, 	155,  // more than 150ms
+	ENDDEF, 0x0000
+};
+
+const unsigned short nt35580_SEQ_CABC_OFF[] = {
+	0x055, 0x100,    // CABC off
+	SLEEPMSEC, 	200,  // more than 200ms
+	ENDDEF, 0x0000                                
+};
+
+const unsigned short nt35580_SEQ_CABC_UI[] = {
+	0x055, 0x101, 
+	SLEEPMSEC, 	200,  // more than 200ms
+	ENDDEF, 0x0000                                
+};
+
+const unsigned short nt35580_SEQ_CABC_IMAGE[] = {
+	0x055, 0x102,   
+	SLEEPMSEC, 	200,  // more than 200ms
+	ENDDEF, 0x0000                                
+};
+
+const unsigned short nt35580_SEQ_CABC_VIDEO[] = {
+	0x055, 0x103, 
+	SLEEPMSEC, 	200,  // more than 200ms
+	ENDDEF, 0x0000                                
+};
+
+#endif  // CONFIG_ARIES_LATONA
 
 const unsigned short s6e63m0_SEQ_SETTING[] = {
 	SLEEPMSEC, 10,

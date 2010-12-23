@@ -42,6 +42,11 @@ static inline int s3c_gpio_do_setpin(struct s3c_gpio_chip *chip,
 	return (chip->config->set_pin)(chip, off, level);
 }
 
+static inline s3c_gpio_pull_t s3c_gpio_do_getpin(struct s3c_gpio_chip *chip,
+				     unsigned int off)
+{
+	return (chip->config->get_pin)(chip, off);
+}
 
 /**
  * s3c_gpio_setcfg_s3c24xx - S3C24XX style GPIO configuration.
@@ -181,6 +186,9 @@ extern s3c_gpio_pull_t s3c_gpio_getpull_s3c24xx(struct s3c_gpio_chip *chip,
 
 extern int s3c_gpio_setpin_updown(struct s3c_gpio_chip *chip,
 				unsigned int off, s3c_gpio_pull_t level);
+
+extern s3c_gpio_pull_t s3c_gpio_getpin_updown(struct s3c_gpio_chip *chip,
+					      unsigned int off);
 
 #endif /* __PLAT_GPIO_CFG_HELPERS_H */
 

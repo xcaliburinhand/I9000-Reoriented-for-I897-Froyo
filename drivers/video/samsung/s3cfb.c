@@ -137,6 +137,8 @@ extern int get_boot_charger_info(void);
 
 #if defined(CONFIG_ARIES_EUR)
 #include "logo_rgb24_wvga_portrait.h"
+#elif defined(CONFIG_ARIES_LATONA)
+#include "logo_rgb24_wvga_portrait_latona.h"
 #elif defined(CONFIG_ARIES_NTT)
 #include "logo_rgb24_wvga_portrait_docomo.h"
 #endif

@@ -149,7 +149,7 @@
 #define TUNING_RECORD_MAIN_AIF1ADCL_VOL	0xC0		// 400h
 #define TUNING_RECORD_MAIN_AIF1ADCR_VOL	0xC0		// 401h
 
-#define TUNING_RECOGNITION_MAIN_INPUTLINE_VOL	0x1F		// 18h
+#define TUNING_RECOGNITION_MAIN_INPUTLINE_VOL	0x1C		// 18h
 #define TUNING_RECOGNITION_MAIN_AIF1ADCL_VOL	0xD0		// 400h
 #define TUNING_RECOGNITION_MAIN_AIF1ADCR_VOL	0xD0		// 401h
 
@@ -2081,6 +2081,10 @@ void wm8994_set_voicecall_common_setting(struct snd_soc_codec *codec)
 
 	DEBUG_LOG("");
 
+	//ssong100905. SPK-BT 전환시 간헐적 Mute Error 및 Pop Noise.
+	wm8994_write(codec, WM8994_SPEAKER_VOLUME_LEFT, 0x100);
+	wm8994_write(codec, WM8994_SPEAKER_VOLUME_RIGHT, 0x100);
+
 	/*GPIO Configuration*/
 	wm8994_write(codec, WM8994_GPIO_1, 0xA101);
 	wm8994_write(codec, WM8994_GPIO_2, 0x8100);
@@ -2107,7 +2111,6 @@ void wm8994_set_voicecall_common_setting(struct snd_soc_codec *codec)
 		wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0018);
 
 	wm8994_write(codec, WM8994_AIF2_RATE, 0x3 << WM8994_AIF2CLK_RATE_SHIFT);
-	
 	// AIF2 Interface - PCM Stereo mode
 	wm8994_write(codec, WM8994_AIF2_CONTROL_1,	//Left Justified, BCLK invert, LRCLK Invert
 		WM8994_AIF2ADCR_SRC | WM8994_AIF2_BCLK_INV |0x18);
@@ -2123,10 +2126,10 @@ void wm8994_set_voicecall_common_setting(struct snd_soc_codec *codec)
 		 | WM8994_DAC1L_ENA | WM8994_DAC1R_ENA);
 	wm8994_write(codec, WM8994_POWER_MANAGEMENT_5, val);
 
-	/*Clocking*/	
-	val = wm8994_read(codec, WM8994_CLOCKING_1);
-	val |= (WM8994_DSP_FS2CLK_ENA);
-	wm8994_write(codec, WM8994_CLOCKING_1, val);
+		/*Clocking*/	
+		val = wm8994_read(codec, WM8994_CLOCKING_1);
+		val |= (WM8994_DSP_FS2CLK_ENA);
+		wm8994_write(codec, WM8994_CLOCKING_1, val);
 
 	wm8994_write(codec, WM8994_POWER_MANAGEMENT_6, 0x0);
 	
@@ -2172,7 +2175,8 @@ void wm8994_set_voicecall_receiver(struct snd_soc_codec *codec)
 	wm8994_write(codec, 0x02, 0x6240); // PM_2 // TSHUT_ENA, TSHUT_OPDIS, MIXINL_ENA, IN1L_ENA
 
 	/* DIGITAL - AIF1DAC1 */
-	wm8994_write(codec, 0x05, 0x0303); // AIF1DAC1L/R_ENA, DAC1L/R_ENA
+	//ssong100903. WM8994 Applications Issue Report CE000681 Changing digital path or clock enable bits when active may result in no sound output 
+	wm8994_write(codec, 0x05, 0x3303); // AIF1DAC1L/R_ENA, DAC1L/R_ENA
 	wm8994_write(codec,0x420, 0x0000); // AIF1DAC1 On
 	wm8994_write(codec,0x601, 0x0001); // AIF1DAC1L_TO_DAC1L
 	wm8994_write(codec,0x602, 0x0001); // AIF1DAC1R_TO_DAC1R
@@ -2352,7 +2356,8 @@ void wm8994_set_voicecall_headset(struct snd_soc_codec *codec)
 
 	msleep(5);
 
-	wm8994_write(codec, 0x05, 0x0303);
+	//ssong100903. WM8994 Applications Issue Report CE000681 Changing digital path or clock enable bits when active may result in no sound output 
+	wm8994_write(codec, 0x05, 0x3303);
 
 	/*Analogue Output Configuration*/	
 	wm8994_write(codec, WM8994_OUTPUT_MIXER_1, 0x0001); // 2Dh //
@@ -2407,13 +2412,19 @@ void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec)
 
 	DEBUG_LOG("");
 
+	//ssong100905. SPK-BT 전환시 간헐적 Mute Error 및 Pop Noise.
+	wm8994_write(codec, WM8994_SPEAKER_VOLUME_LEFT, 0x100);
+	wm8994_write(codec, WM8994_SPEAKER_VOLUME_RIGHT, 0x100);
+	msleep(100);
+
 	audio_ctrl_mic_bias_gpio(1);
 
 	wm8994_write(codec, 0x601, 0x0001);
 	wm8994_write(codec, 0x602, 0x0001);
 	//wm8994_write(codec,0x603, 0x000C);
 
-	msleep(70); // to avoid pop-up noise when path change to SPK LBK@100816
+	//ssong100905. SPK-BT 전환시 간헐적 Mute Error 및 Pop Noise.
+	//msleep(70); // to avoid pop-up noise when path change to SPK LBK@100816
 
 	// Tx -> AIF2 Path
 	//wm8994_write(codec, WM8994_DAC2_LEFT_MIXER_ROUTING, WM8994_ADC1_TO_DAC2L);
@@ -2464,7 +2475,8 @@ void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec)
 	wm8994_write(codec, 0x03, 0x33F0); // LINEOUT1N/P_ENA, SPKl/RVOL_ENA, MIXOUTL/RVOL_ENA, MIXOUTL/R_ENA
 	//wm8994_write(codec, 0x03, 0x3330); // LINEOUT1N/P_ENA, SPKl/RVOL_ENA, MIXOUTL/R_ENA
 	
-	wm8994_write(codec, 0X05, 0X0303); // AIF1DAC1L/R_ENA, DAC1L/R_ENA
+	//ssong100903. WM8994 Applications Issue Report CE000681 Changing digital path or clock enable bits when active may result in no sound output 
+	wm8994_write(codec, 0x05, 0x3303); // AIF1DAC1L/R_ENA, DAC1L/R_ENA
 
 	if(!wm8994->testmode_config_flag)
 	{
@@ -2480,6 +2492,7 @@ void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec)
 		val |= (WM8994_SPKOUT_CLASSAB|TUNING_SPKMIXR_ATTEN);
 		wm8994_write(codec, WM8994_SPKMIXR_ATTENUATION, val);
 
+#if 0 //ssong100905. SPK-BT 전환시 간헐적 Mute Error 및 Pop Noise.
 		val = wm8994_read(codec, WM8994_SPEAKER_VOLUME_LEFT);
 		val &= ~(WM8994_SPKOUTL_MUTE_N_MASK|WM8994_SPKOUTL_VOL_MASK);
 		val |= (WM8994_SPKOUT_VU|WM8994_SPKOUTL_MUTE_N|TUNING_CALL_SPKL_VOL);
@@ -2489,6 +2502,7 @@ void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec)
 		val &= ~(WM8994_SPKOUTR_MUTE_N_MASK|WM8994_SPKOUTR_VOL_MASK);
 		val |= (WM8994_SPKOUT_VU|WM8994_SPKOUTL_MUTE_N|TUNING_CALL_SPKL_VOL);
 		wm8994_write(codec, WM8994_SPEAKER_VOLUME_RIGHT, val);
+#endif
 
 		val = wm8994_read(codec, WM8994_CLASSD);
 		val &= ~(WM8994_SPKOUTL_BOOST_MASK);
@@ -2534,6 +2548,17 @@ void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec)
 
 	//wm8994_write(codec,WM8994_AIF2_DAC_FILTERS_1, WM8994_AIF1DAC1_UNMUTE);
 
+	//ssong100905. SPK-BT 전환시 간헐적 Mute Error 및 Pop Noise.
+	val = wm8994_read(codec, WM8994_SPEAKER_VOLUME_LEFT);
+	val &= ~(WM8994_SPKOUTL_MUTE_N_MASK|WM8994_SPKOUTL_VOL_MASK);
+	val |= (WM8994_SPKOUT_VU|WM8994_SPKOUTL_MUTE_N|TUNING_CALL_SPKL_VOL);
+	wm8994_write(codec, WM8994_SPEAKER_VOLUME_LEFT, val);
+
+	val = wm8994_read(codec, WM8994_SPEAKER_VOLUME_RIGHT);
+	val &= ~(WM8994_SPKOUTR_MUTE_N_MASK|WM8994_SPKOUTR_VOL_MASK);
+	val |= (WM8994_SPKOUT_VU|WM8994_SPKOUTL_MUTE_N|TUNING_CALL_SPKL_VOL);
+	wm8994_write(codec, WM8994_SPEAKER_VOLUME_RIGHT, val);
+
 }
 
 void wm8994_set_voicecall_bluetooth(struct snd_soc_codec *codec)
@@ -2541,6 +2566,11 @@ void wm8994_set_voicecall_bluetooth(struct snd_soc_codec *codec)
 	int val;
 	
 	DEBUG_LOG("");
+
+	//ssong100903. Wolfson Clock MUX S/W Selection Patch
+	wm8994_write(codec, 0X102, 0X0003);
+	wm8994_write(codec, 0X817, 0X0000);
+	wm8994_write(codec, 0X102, 0X0000);
 
 	audio_ctrl_mic_bias_gpio(codec);
 
@@ -2559,13 +2589,13 @@ void wm8994_set_voicecall_bluetooth(struct snd_soc_codec *codec)
 	wm8994_write(codec, WM8994_GPIO_10, 0xA101);
 	wm8994_write(codec, WM8994_GPIO_11, 0xA101);
 
-	/* FLL2	Setting */
+	/* FLL2 Setting */
 	wm8994_write(codec, WM8994_FLL2_CONTROL_2, 0x2F00); // FLL1 Ctrl2, FLL1 Setting
 	wm8994_write(codec, WM8994_FLL2_CONTROL_3, 0x3126); // FLL1 Ctrl3, K Value
 	wm8994_write(codec, WM8994_FLL2_CONTROL_4, 0x0100); // FLL1 Ctrl4, N Value
 	wm8994_write(codec, WM8994_FLL2_CONTROL_5, 0x0C88); // FLL1 Ctrl5
 	wm8994_write(codec, WM8994_FLL2_CONTROL_1, (WM8994_FLL2_FRACN_ENA|WM8994_FLL2_ENA));
-
+	
 	wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0018); // AIF2 Clock Source = FLL2
 	//wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0009); // Enable AIF2 Clock, AIF2 Clock Source = MCLK2 (from CP)
 

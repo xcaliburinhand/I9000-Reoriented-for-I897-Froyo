@@ -26,6 +26,7 @@ static struct s3c_gpio_cfg gpio_cfg = {
 	.set_pull	= s3c_gpio_setpull_updown,
 	.get_pull	= s3c_gpio_getpull_updown,
 	.set_pin	= s3c_gpio_setpin_updown,
+	.get_pin	= s3c_gpio_getpin_updown,
 };
 
 static struct s3c_gpio_cfg gpio_cfg_noint = {
@@ -33,6 +34,7 @@ static struct s3c_gpio_cfg gpio_cfg_noint = {
 	.set_pull	= s3c_gpio_setpull_updown,
 	.get_pull	= s3c_gpio_getpull_updown,
 	.set_pin	= s3c_gpio_setpin_updown,
+	.get_pin	= s3c_gpio_getpin_updown,
 };
 
 static struct s3c_gpio_chip s5pv210_gpio_4bit[] = {

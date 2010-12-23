@@ -1,6 +1,8 @@
 /*
  * Gadget Driver for Android, with ADB and UMS and ACM support
  *
+ * Copyright (C) 2008 Google, Inc. Author: Mike Lockwood <lockwood@android.com>
+ *
  * Copyright (C) 2009 Samsung Electronics, Seung-Soo Yang
  *
  * This software is licensed under the terms of the GNU General Public
@@ -580,7 +582,7 @@ recheck:
 		if (enable== USBSTATUS_SAMSUNG_KIES)
 		{
 			printk("[enable_adb]USBSTATUS_SAMSUNG_KIES\n");
-			mtp_mode_on = 1;
+			mtp_mode_on = 0;
 			ret = usb_change_config(dev->cdev, &acm_mtp_config);
 			if (ret) {
 				printk("[%s] Fail to acm_mtp_config()\n", __func__);
@@ -717,7 +719,7 @@ static void enable_askon(struct android_dev *dev, int enable)
 		if (enable== USBSTATUS_SAMSUNG_KIES)
 		{
 			printk("[enable_askon]USBSTATUS_SAMSUNG_KIES\n");
-			mtp_mode_on = 1;
+			mtp_mode_on = 0;
 			inaskonstatus = 1;
 			UsbIndicator(1);
 			ret = usb_change_config(dev->cdev, &acm_mtp_config);

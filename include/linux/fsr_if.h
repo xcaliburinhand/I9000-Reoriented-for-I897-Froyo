@@ -9,7 +9,7 @@
  *---------------------------------------------------------------------------*
 */
 /**
- *  @version 	RFS_3.0.0_b035_LinuStoreIII_1.2.0_b035_FSR_1.2.1p1_b129_RC
+ *  @version 	LinuStoreIII_1.2.0_b038-FSR_1.2.1p1_b139_RTM
  *  @file	include/linux/fsr_if.h
  *  @brief	FSR interface to export commands and macros to utils, fat
  *
@@ -19,7 +19,7 @@
 #ifndef _FSR_IF_H_
 #define _FSR_IF_H_
 
-#define LINUSTOREIII_VERSION_STRING      "LinuStoreIII_1.2.0_b035"
+#define LINUSTOREIII_VERSION_STRING      "LinuStoreIII_1.2.0_b038"
 
 #ifndef __KERNEL__
 /*Warning*/
@@ -150,6 +150,7 @@
 #define STL_CHANGE_PART_ATTR			0x8A19		///< STL layer change attribute
 #define STL_GET_MINOR_NUMBER			0x8A1A		///< get STL layer minor number
 #define STL_GET_MAJOR_NUMBER			0x8A1B		///< get STL layer major number
+#define STL_DISCARD				0x8A1C		///< discard STL mapping deleted in FileSystem
 #define STL_OPEN				0x8A1D		///< STL partition open
 #define STL_CLOSE				0x8A1E		///< STL partition close
 

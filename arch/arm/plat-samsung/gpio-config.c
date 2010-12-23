@@ -81,6 +81,29 @@ int s3c_gpio_setpin(unsigned int pin, s3c_gpio_pull_t level)
 
 EXPORT_SYMBOL(s3c_gpio_setpin);
 
+
+s3c_gpio_pull_t s3c_gpio_getpin(unsigned int pin)
+{
+	struct s3c_gpio_chip *chip = s3c_gpiolib_getchip(pin);
+	unsigned long flags;
+	int offset;
+	s3c_gpio_pull_t ret;
+
+	if (!chip)
+		return -EINVAL;
+
+	offset = pin - chip->chip.base;
+
+	local_irq_save(flags);
+	//ret = s3c_gpio_do_getpin(chip, offset, level);
+	ret = (chip->config->get_pin) (chip, offset);
+	local_irq_restore(flags);
+
+	return ret;
+}
+
+EXPORT_SYMBOL(s3c_gpio_getpin);
+
 #ifdef CONFIG_S3C_GPIO_CFG_S3C24XX
 int s3c_gpio_setcfg_s3c24xx_banka(struct s3c_gpio_chip *chip,
 				  unsigned int off, unsigned int cfg)
@@ -198,3 +221,13 @@ int s3c_gpio_setpin_updown(struct s3c_gpio_chip *chip,
 	return 0;
 }
 
+s3c_gpio_pull_t s3c_gpio_getpin_updown(struct s3c_gpio_chip *chip,
+				       unsigned int off)
+{
+	void __iomem *reg = chip->base + 0x04;
+	u32 lvl;
+
+	lvl = __raw_readl(reg);
+	lvl &= (1 << off);
+	return lvl ? 1 : 0;
+}

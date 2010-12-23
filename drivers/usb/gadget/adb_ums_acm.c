@@ -1,6 +1,8 @@
 /*
  * Gadget Driver for Android, with ADB and UMS and ACM support
  *
+ * Copyright (C) 2008 Google, Inc. Author: Mike Lockwood <lockwood@android.com>
+ * 
  * Copyright (C) 2009 Samsung Electronics, Seung-Soo Yang
  *
  * This software is licensed under the terms of the GNU General Public

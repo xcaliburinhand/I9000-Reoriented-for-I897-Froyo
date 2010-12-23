@@ -107,6 +107,12 @@ config ARIES_NTT
         depends on MACH_S5PC110_ARIES
         help
           Select S1 NTT
+
+config ARIES_LATONA
+        bool "select S1 LATONA"
+        depends on MACH_S5PC110_ARIES
+        help
+          Select S1 LATONA
 endchoice
 
 config GALAXY_I897

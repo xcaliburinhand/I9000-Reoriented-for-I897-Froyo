@@ -54,8 +54,13 @@
 #define TUNING_MP3_CLASSD_VOL		0x5		// 25h
 
 // Headset
-#define TUNING_MP3_OUTPUTL_VOL		0x2F		// 1Ch
-#define TUNING_MP3_OUTPUTR_VOL 	0x2F		// 1Dh
+#if defined(CONFIG_ARIES_LATONA)
+#define TUNING_MP3_OUTPUTL_VOL		0x31            // 1Ch [0x2F -> 0x31] LATONA1 HW request
+#define TUNING_MP3_OUTPUTR_VOL 	        0x31            // 1Dh [0x2F -> 0x31] LATONA1 HW request
+#else
+#define TUNING_MP3_OUTPUTL_VOL		0x2F            // 1Ch 
+#define TUNING_MP3_OUTPUTR_VOL 	        0x2F            // 1Dh 
+#endif  //CONFIG_ARIES_LATONA
 #define TUNING_MP3_OPGAL_VOL		0x39		// 20h
 #define TUNING_MP3_OPGAR_VOL		0x39		// 21h
 
@@ -66,8 +71,8 @@
 // Extra_Dock_speaker
 #define TUNING_MP3_EXTRA_DOCK_SPK_OPGAL_VOL		0x39		// 20h
 #define TUNING_MP3_EXTRA_DOCK_SPK_OPGAR_VOL		0x39		// 21h
-#define TUNING_EXTRA_DOCK_SPK_OUTMIX5_VOL		0x1		// 31h
-#define TUNING_EXTRA_DOCK_SPK_OUTMIX6_VOL		0x1		// 32h
+#define TUNING_EXTRA_DOCK_SPK_OUTMIX5_VOL		0x0		// 31h
+#define TUNING_EXTRA_DOCK_SPK_OUTMIX6_VOL		0x0		// 32h
 #define TUNING_MP3_EXTRA_DOCK_SPK_VOL	0x0		//1Eh
 
 //------------------------------------------------
@@ -106,7 +111,11 @@
 #define TUNING_HPOUT2_VOL		0x0		// 1Fh
 
 // Call Main MIC
+#if defined(CONFIG_ARIES_LATONA)
+#define TUNING_CALL_RCV_INPUTMIX_VOL	0x0E		// 18h //[0x16 -> 0x0E] LATONA1 HW request (10/7)
+#else
 #define TUNING_CALL_RCV_INPUTMIX_VOL	0x16		// 18h
+#endif  //CONFIG_ARIES_LATONA
 #define TUNING_CALL_RCV_MIXER_VOL	WM8994_IN1L_MIXINL_VOL	// 29h 30dB
 
 #define TUNING_CALL_SPK_INPUTMIX_VOL	0x0D		// 18h
@@ -114,6 +123,39 @@
 
 // Call Ear MIC
 #define TUNING_CALL_EAR_INPUTMIX_VOL	0x1D		// 1Ah
+
+//------------------------------------------------
+// VoIP Call
+#if (defined FEATURE_VOIP)
+// Receiver
+#define TUNING_VOIP_RCV_AIF1DAC_BOOST           0x01 // 301h // [DJ02-1720]
+#define TUNING_VOIP_RCV_OPGAL_VOL               0x39 // 20h // [DJ05-2239] VoIP 0x34->0x39 (0dB)
+#define TUNING_VOIP_RCV_OPGAR_VOL               0x39 // 21h // [DJ05-2239] VoIP 0x34->0x39 (0dB)
+
+// Headset(3pole/4pole)
+#define TUNING_VOIP_EAR_OUTPUTL_VOL             0x35 // 1Ch // [DJ05-2239] VoIP 0x38->0x35 (-4dB)
+#define TUNING_VOIP_EAR_OUTPUTR_VOL             0x35 // 1Dh // [DJ05-2239] VoIP 0x38->0x35 (-4dB)
+#define TUNING_VOIP_EAR_OPGAL_VOL               0x3F // 20h // [DI25-1834] VoIP 0x3F (+6dB)
+#define TUNING_VOIP_EAR_OPGAR_VOL               0x3F // 21h // [DI25-1834] VoIP 0x3F (+ddB)
+#define TUNING_VOIP_EAR_AIF1DAC_BOOST           0x01 // 301h // [DJ05-2239] VoIP 0x01 (+6dB)
+
+// Speaker
+#define TUNING_VOIP_SPKL_VOL                    0x39 // 26h // [DJ05-2239] 0x3C->0x39
+#define TUNING_VOIP_CLASSD_VOL                  0x07 // 25h
+#define TUNING_VOIP_SPK_AIF1DAC_BOOST           0x02 // 301h // [DJ05-2239] 0x01->0x02
+
+// VoIP Call Main MIC
+#define TUNING_VOIP_RCV_INPUTMIX_VOL            0x17 // 18h // [DJ05-2239] VoIP 0x17(+18.0dB)
+#define TUNING_VOIP_SPK_INPUTMIX_VOL            0x1A // 18h // [DJ05-2239] VoIP 0x1A(+22.5dB)
+#define TUNING_VOIP_3P_INPUTMIX_VOL             0x1A // 18h // [DJ05-2239] VoIP 0x1A(+22.5dB)
+#define TUNING_VOIP_MAIN_AIF1ADCL_VOL           0xEF // 400h // [DI28-2336] VoIP 0xEF(max, +17.625dB)
+#define TUNING_VOIP_MAIN_AIF1ADCR_VOL           0xEF // 401h
+
+// VoIP Call Ear MIC
+#define TUNING_VOIP_EAR_INPUTMIX_VOL            0x17 // 1Ah // [DJ05-2239] VoIP 0x17(+22.5dB)
+#define TUNING_VOIP_EAR_AIF1ADCL_VOL            0xEF // 400h
+#define TUNING_VOIP_EAR_AIF1ADCR_VOL            0xEF // 401h // [DI28-2336] VoIP 0xEF(max, +17.625dB)
+#endif
 
 //------------------------------------------------
 // FM Radio
@@ -145,7 +187,11 @@
 //------------------------------------------------
 // Recording
 // Main MIC
+#if defined(CONFIG_ARIES_LATONA)
+#define TUNING_RECORD_MAIN_INPUTLINE_VOL	0x19		// 18h   //[0x18 -> 0x19] LATONA1 HW request (10/7)
+#else
 #define TUNING_RECORD_MAIN_INPUTLINE_VOL	0x18		// 18h
+#endif  //CONFIG_ARIES_LATONA
 #define TUNING_RECORD_MAIN_AIF1ADCL_VOL	0xC0		// 400h
 #define TUNING_RECORD_MAIN_AIF1ADCR_VOL	0xC0		// 401h
 
@@ -2017,7 +2063,8 @@ void wm8994_set_playback_extra_dock_speaker(struct snd_soc_codec *codec)
 	}
 
 	// For X-talk of VPS's L/R line. It's requested by H/W team.
-	wm8994_write(codec, WM8994_ADDITIONAL_CONTROL, 0x40);
+	wm8994_write(codec, WM8994_ADDITIONAL_CONTROL, 0x00);
+	wm8994_write(codec, WM8994_ANTIPOP_1, 0x80);
 
 	val = wm8994_read(codec,WM8994_OUTPUT_MIXER_1);
 	val &= ~(WM8994_DAC1L_TO_MIXOUTL_MASK);
@@ -2425,6 +2472,173 @@ void wm8994_set_voicecall_headset(struct snd_soc_codec *codec)
 
 }
 
+#if (defined FEATURE_3POLE_CALL_SUPPORT)
+void wm8994_set_voicecall_headphone(struct snd_soc_codec *codec)
+{
+	struct wm8994_priv *wm8994 = codec->private_data;
+
+	int val;
+
+	u16 TestReturn1=0;
+	u16 TestReturn2=0;
+	u16 TestLow1=0;
+	u16 TestHigh1=0;
+	u8 TestLow=0;
+	u8 TestHigh=0;
+
+	DEBUG_LOG("");
+
+	audio_ctrl_mic_bias_gpio(1);
+	
+	wm8994_set_voicecall_common_setting(codec);
+	
+	/*Digital Path Enables and Unmutes*/	
+	if(wm8994->hw_version == 3)	// H/W Rev D
+	{
+		wm8994_write(codec, WM8994_DAC2_LEFT_MIXER_ROUTING, WM8994_ADC2_TO_DAC2L);
+		wm8994_write(codec,WM8994_DAC2_MIXER_VOLUMES, 0x0180);
+		wm8994_write(codec,WM8994_SIDETONE, 0x01C0);
+	}
+	else		// H/W Rev B
+	{
+		wm8994_write(codec,WM8994_DAC2_MIXER_VOLUMES, 0x000C);  
+		wm8994_write(codec, WM8994_DAC2_LEFT_MIXER_ROUTING, WM8994_ADC1_TO_DAC2L);
+		wm8994_write(codec,WM8994_SIDETONE, 0x01C1);
+	}
+	/*Analogue Input Configuration*/
+	val = wm8994_read(codec,WM8994_POWER_MANAGEMENT_2);	
+	val &= ~(WM8994_TSHUT_ENA_MASK | WM8994_TSHUT_OPDIS_MASK | WM8994_MIXINR_ENA_MASK | WM8994_IN1R_ENA_MASK);
+	val |= (WM8994_TSHUT_ENA | WM8994_TSHUT_OPDIS | WM8994_MIXINL_ENA | WM8994_IN1L_ENA);
+	wm8994_write(codec,WM8994_POWER_MANAGEMENT_2, 0x6110);
+	
+	wm8994_write(codec, WM8994_INPUT_MIXER_2, WM8994_IN1LP_TO_IN1L | WM8994_IN1LN_TO_IN1L); 	// differential(3) or single ended(1)
+
+	if(!wm8994->testmode_config_flag)
+	{
+		// Volume Control - Input
+		val = wm8994_read(codec, WM8994_INPUT_MIXER_3);
+		val&= ~(WM8994_IN1L_TO_MIXINL_MASK | WM8994_IN1L_MIXINL_VOL_MASK | WM8994_MIXOUTL_MIXINL_VOL_MASK);
+		val |= (WM8994_IN1L_TO_MIXINL | TUNING_CALL_SPK_MIXER_VOL);//0db
+		wm8994_write(codec, WM8994_INPUT_MIXER_3, val); 
+	
+		val = wm8994_read(codec, WM8994_LEFT_LINE_INPUT_1_2_VOLUME );	
+		val &= ~(WM8994_IN1L_MUTE_MASK | WM8994_IN1L_VOL_MASK);	// Unmute IN1L
+		val |= (WM8994_IN1L_VU | TUNING_CALL_SPK_INPUTMIX_VOL);
+		wm8994_write(codec, WM8994_LEFT_LINE_INPUT_1_2_VOLUME , val);
+	}
+
+	/* Unmute*/
+	if(!wm8994->testmode_config_flag)
+	{
+		val = wm8994_read(codec, WM8994_LEFT_OPGA_VOLUME);
+		val &= ~(WM8994_MIXOUTL_MUTE_N_MASK | WM8994_MIXOUTL_VOL_MASK);
+		val |= (WM8994_MIXOUT_VU | WM8994_MIXOUTL_MUTE_N | TUNING_CALL_OPGAL_VOL);
+		wm8994_write(codec,WM8994_LEFT_OPGA_VOLUME, val );
+	
+		val = wm8994_read(codec, WM8994_RIGHT_OPGA_VOLUME);
+		val &= ~(WM8994_MIXOUTR_MUTE_N_MASK | WM8994_MIXOUTR_VOL_MASK);
+		val |= (WM8994_MIXOUT_VU | WM8994_MIXOUTR_MUTE_N | TUNING_CALL_OPGAR_VOL);
+		wm8994_write(codec,WM8994_RIGHT_OPGA_VOLUME, val );
+	}
+		
+	wm8994_write(codec,WM8994_POWER_MANAGEMENT_4, 0x2001 );   
+	
+	val = wm8994_read(codec, 0x102  ); 	
+	val &= ~(0x0003);
+	val = 0x0003;
+	wm8994_write(codec,0x102,val);
+	
+	val = wm8994_read(codec, 0x56  ); 	
+	val &= ~(0x0003);
+	val = 0x0003;
+	wm8994_write(codec,0x56,val);
+	
+	val = wm8994_read(codec, 0x102  ); 	
+	val &= ~(0x0000);
+	val = 0x0000;
+	wm8994_write(codec,0x102,val);
+
+	val = wm8994_read(codec, WM8994_CLASS_W_1  ); 	
+	val &= ~(0x0005);
+	val |= 0x0005;
+	wm8994_write(codec,WM8994_CLASS_W_1,val);
+
+	if(!wm8994->testmode_config_flag)
+	{
+		val = wm8994_read(codec,WM8994_LEFT_OUTPUT_VOLUME);
+		val &= ~(WM8994_HPOUT1L_MUTE_N_MASK | WM8994_HPOUT1L_VOL_MASK);
+		val |= (WM8994_HPOUT1_VU | WM8994_HPOUT1L_MUTE_N | TUNING_CALL_OUTPUTL_VOL);
+		wm8994_write(codec, WM8994_LEFT_OUTPUT_VOLUME, val);
+
+		val = wm8994_read(codec,WM8994_RIGHT_OUTPUT_VOLUME);
+		val &= ~(WM8994_HPOUT1R_MUTE_N_MASK | WM8994_HPOUT1R_VOL_MASK);
+		val |= (WM8994_HPOUT1_VU | WM8994_HPOUT1R_MUTE_N | TUNING_CALL_OUTPUTR_VOL);
+		wm8994_write(codec, WM8994_RIGHT_OUTPUT_VOLUME, val);
+	}
+
+	val = wm8994_read(codec, WM8994_DC_SERVO_2  ); 	
+	val &= ~(0x03E0);
+	val = 0x03E0;
+	wm8994_write(codec,WM8994_DC_SERVO_2,val);
+	
+	wm8994_write(codec,WM8994_POWER_MANAGEMENT_1, 0x0303 );  
+		
+	wm8994_write(codec,WM8994_ANALOGUE_HP_1, 0x0022 );  
+	wm8994_write(codec,WM8994_CHARGE_PUMP_1, 0x9F25 );  
+
+	msleep(5);
+
+	/*Analogue Output Configuration*/	
+	wm8994_write(codec,WM8994_OUTPUT_MIXER_1, 0x0001 );   
+	wm8994_write(codec,WM8994_OUTPUT_MIXER_2, 0x0001 );   
+
+	wm8994_write(codec,WM8994_POWER_MANAGEMENT_3, 0x0030 );   
+
+	wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0019);
+	
+	wm8994_write(codec,WM8994_DC_SERVO_1, 0x303);  
+
+	msleep(160);	// 160ms delay
+
+	TestReturn1=wm8994_read(codec,WM8994_DC_SERVO_4);
+	
+	TestLow=(signed char)(TestReturn1 & 0xff);
+	TestHigh=(signed char)((TestReturn1>>8) & 0xff);
+
+	TestLow1=((signed short)TestLow-5)&0x00ff;
+	TestHigh1=(((signed short)(TestHigh-5)<<8)&0xff00);
+	TestReturn2=TestLow1|TestHigh1;
+	wm8994_write(codec,WM8994_DC_SERVO_4, TestReturn2);
+
+	val = wm8994_read(codec, WM8994_DC_SERVO_1  ); 	
+	val &= ~(0x000F);
+	val = 0x000F;
+	wm8994_write(codec,WM8994_DC_SERVO_1,val);
+	
+	msleep(15);
+	
+	wm8994_write(codec,WM8994_ANALOGUE_HP_1, 0x00EE );  
+
+	//Unmute DAC1 left
+	val = wm8994_read(codec,WM8994_DAC1_LEFT_VOLUME );
+	val &= ~(WM8994_DAC1L_MUTE_MASK | WM8994_DAC1L_VOL_MASK);
+	val |= TUNING_DAC1L_VOL; 
+	wm8994_write(codec,WM8994_DAC1_LEFT_VOLUME ,val);
+
+	//Unmute and volume ctrl RightDAC
+	val = wm8994_read(codec, WM8994_DAC1_RIGHT_VOLUME ); 
+	val &= ~(WM8994_DAC1R_MUTE_MASK | WM8994_DAC1R_VOL_MASK);
+	val |= TUNING_DAC1R_VOL; //0 db volume	
+	wm8994_write(codec,WM8994_DAC1_RIGHT_VOLUME,val);
+
+	wm8994_write(codec,WM8994_DAC2_LEFT_VOLUME, 0x01C0 );
+
+	wm8994_write(codec,WM8994_AIF1_DAC1_FILTERS_1, 0x0000 );  
+	wm8994_write(codec,WM8994_AIF2_DAC_FILTERS_1, 0x0000 );  
+
+}
+#endif
+
 void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec)
 {
 	struct wm8994_priv *wm8994 = codec->private_data;
@@ -2600,6 +2814,911 @@ void wm8994_set_voicecall_bluetooth(struct snd_soc_codec *codec)
 	wm8994_write(codec, WM8994_AIF1_DAC1_FILTERS_1, 0x0000);  
 	wm8994_write(codec, WM8994_AIF2_DAC_FILTERS_1, 0x0000); 
 }
+
+#if (defined FEATURE_VOIP)
+void wm8994_set_voipcall_receiver(struct snd_soc_codec *codec)
+{
+	struct wm8994_priv *wm8994 = codec->private_data;
+
+	u16 val;
+
+	DEBUG_LOG("");
+
+    val = wm8994_read(codec, WM8994_OUTPUT_MIXER_5);
+	val &= ~(WM8994_DACL_MIXOUTL_VOL_MASK);
+	val |= (TUNING_RCV_OUTMIX5_VOL<<WM8994_DACL_MIXOUTL_VOL_SHIFT);
+	wm8994_write(codec, WM8994_OUTPUT_MIXER_5, val);
+
+	val = wm8994_read(codec, WM8994_OUTPUT_MIXER_6);
+	val &= ~(WM8994_DACR_MIXOUTR_VOL_MASK);
+	val |= (TUNING_RCV_OUTMIX6_VOL<<WM8994_DACR_MIXOUTR_VOL_SHIFT);
+	wm8994_write(codec, WM8994_OUTPUT_MIXER_6, val);
+
+	if(!wm8994->testmode_config_flag)
+	{
+		val = wm8994_read(codec, WM8994_LEFT_OPGA_VOLUME);
+		val &= ~(WM8994_MIXOUTL_MUTE_N_MASK|WM8994_MIXOUTL_VOL_MASK);
+		val |= (WM8994_MIXOUT_VU|WM8994_MIXOUTL_MUTE_N|TUNING_VOIP_RCV_OPGAL_VOL);
+		wm8994_write(codec, WM8994_LEFT_OPGA_VOLUME, val);
+
+		val = wm8994_read(codec, WM8994_RIGHT_OPGA_VOLUME);
+		val &= ~(WM8994_MIXOUTR_MUTE_N_MASK|WM8994_MIXOUTR_VOL_MASK);
+		val |= (WM8994_MIXOUT_VU|WM8994_MIXOUTR_MUTE_N|TUNING_VOIP_RCV_OPGAR_VOL);
+		wm8994_write(codec, WM8994_RIGHT_OPGA_VOLUME, val);
+	}
+
+    val = wm8994_read(codec, WM8994_HPOUT2_VOLUME);
+	val &= ~(WM8994_HPOUT2_MUTE_MASK|WM8994_HPOUT2_VOL_MASK);
+    val |= (TUNING_HPOUT2_VOL<<WM8994_HPOUT2_VOL_SHIFT);
+	wm8994_write(codec, WM8994_HPOUT2_VOLUME, val);
+
+	val = wm8994_read(codec, WM8994_DAC1_LEFT_VOLUME);
+	val &= ~(WM8994_DAC1L_MUTE_MASK|WM8994_DAC1L_VOL_MASK);
+	val |= (WM8994_DAC1_VU|TUNING_DAC1L_VOL); // 0xC0 = 0dB (MAX)
+	wm8994_write(codec, WM8994_DAC1_LEFT_VOLUME, val);
+
+	val = wm8994_read(codec, WM8994_DAC1_RIGHT_VOLUME); 
+	val &= ~(WM8994_DAC1R_MUTE_MASK|WM8994_DAC1R_VOL_MASK);
+	val |= (WM8994_DAC1_VU|TUNING_DAC1R_VOL);
+	wm8994_write(codec, WM8994_DAC1_RIGHT_VOLUME, val);
+
+	if(!wm8994->testmode_config_flag)
+	{
+		val = wm8994_read(codec, WM8994_AIF1_CONTROL_2);
+		val &= ~(WM8994_AIF1DAC_BOOST_MASK);
+		val |= (TUNING_VOIP_RCV_AIF1DAC_BOOST<<WM8994_AIF1DAC_BOOST_SHIFT); // 00 = 0dB, 01 = +6dB, 02 = +12dB, 03 = +18dB
+		wm8994_write(codec, WM8994_AIF1_CONTROL_2, val);
+	}
+
+	// 2DH // DAC1L_TO_HPOUT1L set
+	val = wm8994_read(codec, WM8994_OUTPUT_MIXER_1);
+	val &= ~(WM8994_DAC1L_TO_MIXOUTL_MASK);
+	val |= (WM8994_DAC1L_TO_MIXOUTL);
+	wm8994_write(codec, WM8994_OUTPUT_MIXER_1, val);
+
+	val = wm8994_read(codec, WM8994_OUTPUT_MIXER_2);
+	val &= ~(WM8994_DAC1R_TO_MIXOUTR_MASK);
+	val |= (WM8994_DAC1R_TO_MIXOUTR);
+	wm8994_write(codec, WM8994_OUTPUT_MIXER_2, val);
+
+	val = wm8994_read(codec, WM8994_HPOUT2_MIXER);
+	val &= ~(WM8994_MIXOUTLVOL_TO_HPOUT2_MASK|WM8994_MIXOUTRVOL_TO_HPOUT2_MASK);
+	val |= (WM8994_MIXOUTRVOL_TO_HPOUT2|WM8994_MIXOUTLVOL_TO_HPOUT2);
+	wm8994_write(codec, WM8994_HPOUT2_MIXER, val);
+
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_5);
+	//val &= ~(WM8994_AIF1DAC1L_ENA_MASK|WM8994_AIF1DAC1R_ENA_MASK|WM8994_DAC1L_ENA_MASK|WM8994_DAC1R_ENA_MASK);
+	//val |= (WM8994_AIF1DAC1L_ENA|WM8994_AIF1DAC1R_ENA|WM8994_DAC1L_ENA|WM8994_DAC1R_ENA);
+	val &= ~(WM8994_AIF1DAC1L_ENA_MASK|WM8994_AIF1DAC1R_ENA_MASK|WM8994_DAC1L_ENA_MASK);
+	val |= (WM8994_AIF1DAC1L_ENA|WM8994_AIF1DAC1R_ENA|WM8994_DAC1L_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_5, val);
+
+	val = wm8994_read(codec, WM8994_AIF1_DAC1_FILTERS_1);
+	val &= ~(WM8994_AIF1DAC1_MUTE_MASK|WM8994_AIF1DAC1_MONO_MASK);
+	val |= (WM8994_AIF1DAC1_UNMUTE|WM8994_AIF1DAC1_MONO);
+	wm8994_write(codec, WM8994_AIF1_DAC1_FILTERS_1, val);
+
+	val = wm8994_read(codec, WM8994_DAC1_LEFT_MIXER_ROUTING);
+	val &= ~(WM8994_AIF1DAC1L_TO_DAC1L_MASK);
+	val |= (WM8994_AIF1DAC1L_TO_DAC1L);
+	wm8994_write(codec, WM8994_DAC1_LEFT_MIXER_ROUTING, val);
+
+	//val = wm8994_read(codec, WM8994_DAC1_RIGHT_MIXER_ROUTING);
+	//val &= ~(WM8994_AIF1DAC1R_TO_DAC1R_MASK);
+	//val |= (WM8994_AIF1DAC1R_TO_DAC1R);
+	//wm8994_write(codec, WM8994_DAC1_RIGHT_MIXER_ROUTING, val);
+
+	val = wm8994_read(codec, WM8994_CLOCKING_1);
+	val &= ~(WM8994_DSP_FS1CLK_ENA_MASK|WM8994_DSP_FSINTCLK_ENA_MASK);
+	val |= (WM8994_DSP_FS1CLK_ENA|WM8994_DSP_FSINTCLK_ENA);
+	wm8994_write(codec, WM8994_CLOCKING_1, val);
+
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_3);
+	val &= ~(WM8994_MIXOUTLVOL_ENA_MASK|WM8994_MIXOUTRVOL_ENA_MASK|WM8994_MIXOUTL_ENA_MASK|WM8994_MIXOUTR_ENA_MASK);
+	val |= (WM8994_MIXOUTL_ENA|WM8994_MIXOUTR_ENA|WM8994_MIXOUTRVOL_ENA|WM8994_MIXOUTLVOL_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_3, val);
+
+	val = (WM8994_BIAS_ENA|WM8994_VMID_SEL_NORMAL|WM8994_HPOUT2_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_1, val);
+
+	// 300H // Mixing left channel output to right channel // val: 0x0010
+	val = wm8994_read(codec, WM8994_AIF1_CONTROL_1);
+	val &= ~(WM8994_AIF1ADCL_SRC_MASK|WM8994_AIF1ADCR_SRC_MASK);
+	wm8994_write(codec, WM8994_AIF1_CONTROL_1, val);
+
+	wm8994_write(codec, WM8994_ANTIPOP_2, 0x68); // Main mic volume issue fix
+
+	// 700H // GPIO1 // GP1_DIR IN, GP1_PD EN, GP1_DB DE-BOUNCE, GP1_FN = LOGIC LVL 0
+	wm8994_write(codec, WM8994_GPIO_1, 0xA101);
+
+	// 02H // MIXINL_ENA, IN1L_ENA
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_2);
+	val &= ~(WM8994_MIXINL_ENA_MASK|WM8994_IN1L_ENA_MASK);
+	val |= (WM8994_MIXINL_ENA|WM8994_IN1L_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_2, val);
+
+	if(!wm8994->testmode_config_flag)
+	{	
+		// 18H // IN1L PGA // IN1L UNMUTE, SET VOL
+		val = wm8994_read(codec, WM8994_LEFT_LINE_INPUT_1_2_VOLUME);
+		val &= ~(WM8994_IN1L_MUTE_MASK|WM8994_IN1L_VOL_MASK);
+		val |= (WM8994_IN1L_VU|TUNING_VOIP_RCV_INPUTMIX_VOL);
+		wm8994_write(codec, WM8994_LEFT_LINE_INPUT_1_2_VOLUME, val);
+
+		// 29H // MIXINL PGA // IN2L_TO_MIXINL MUTE, IN1L_TO_MIXINL UNMUTE, 0dB
+		val = wm8994_read(codec, WM8994_INPUT_MIXER_3);
+		val &= ~(WM8994_IN1L_TO_MIXINL_MASK|WM8994_IN1L_MIXINL_VOL_MASK|WM8994_MIXOUTL_MIXINL_VOL_MASK);
+		//val |= (WM8994_IN1L_TO_MIXINL|WM8994_IN1L_MIXINL_VOL); // [DI10-1941] VoIP BoostOn (+30dB)
+		val |= (WM8994_IN1L_TO_MIXINL);	// [DI28-2336] back to BoostOff (0dB)
+		wm8994_write(codec, WM8994_INPUT_MIXER_3, val);
+	}
+
+	// 400H // AIF1 ADC1 Left Volume // Gain Tuning // H/W req.
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_LEFT_VOLUME);
+	val &= ~(WM8994_AIF1ADC1L_VOL_MASK);
+	val |= (WM8994_AIF1ADC1_VU|TUNING_VOIP_MAIN_AIF1ADCL_VOL); // ADC Digital Gain
+	wm8994_write(codec, WM8994_AIF1_ADC1_LEFT_VOLUME, val);
+
+	// 28H // INPUT MIXER // IN1LP/N_TO_IN1L PGA
+	val = wm8994_read(codec, WM8994_INPUT_MIXER_2);	
+	val &= (WM8994_IN1LP_TO_IN1L_MASK|WM8994_IN1LN_TO_IN1L_MASK);
+	val |= (WM8994_IN1LP_TO_IN1L|WM8994_IN1LN_TO_IN1L);
+	wm8994_write(codec, WM8994_INPUT_MIXER_2, val);
+
+	// 410H // AIF1 ADC1 Filters // AIF1 ADC1 hi-path filter on
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_FILTERS);
+	val &= ~(WM8994_AIF1ADC1L_HPF|WM8994_AIF1ADC1R_HPF);
+	val |= (WM8994_AIF1ADC1L_HPF|WM8994_AIF1ADC1R_HPF); // hi-path filter on (L/R)
+	wm8994_write(codec, WM8994_AIF1_ADC1_FILTERS, 0x3800); // [DJ05-2239] // 0x5800 -> 0x3800
+
+	// 04H // AIF1ADC1L_ENA, ADCL_ENA 
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_4);
+	val &= ~(WM8994_AIF1ADC1L_ENA_MASK|WM8994_ADCL_ENA_MASK);
+	val |= (WM8994_AIF1ADC1L_ENA|WM8994_ADCL_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_4, val);
+
+	// 606H // ADC1L_TO_AIF1ADC1L (TIMESLOT 0) ASSIGN
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_LEFT_MIXER_ROUTING);
+	val &= ~(WM8994_ADC1L_TO_AIF1ADC1L_MASK);
+	val |= (WM8994_ADC1L_TO_AIF1ADC1L);
+	wm8994_write(codec, WM8994_AIF1_ADC1_LEFT_MIXER_ROUTING, val);
+}
+
+void wm8994_set_voipcall_headset(struct snd_soc_codec *codec)
+{
+	struct wm8994_priv *wm8994 = codec->private_data;
+
+	u16 val;
+
+	u16 valBefore = 0;
+	u16 valAfter = 0;
+	u16 valLow1 = 0;
+	u16 valHigh1 = 0;
+	u8 valLow = 0;
+	u8 valHigh = 0;
+	
+	DEBUG_LOG("");
+
+	//Configuring the Digital Paths
+	// Enable the Timeslot0 to DAC1L
+	val = wm8994_read(codec, WM8994_DAC1_LEFT_MIXER_ROUTING);
+	val &= ~(WM8994_AIF1DAC1L_TO_DAC1L_MASK);
+	val |= WM8994_AIF1DAC1L_TO_DAC1L;
+	wm8994_write(codec, WM8994_DAC1_LEFT_MIXER_ROUTING, val);
+
+	// Enable the Timeslot0 to DAC1R
+	val = wm8994_read(codec, WM8994_DAC1_RIGHT_MIXER_ROUTING);
+	val &= ~(WM8994_AIF1DAC1R_TO_DAC1R_MASK);
+	val |= WM8994_AIF1DAC1R_TO_DAC1R;
+	wm8994_write(codec, WM8994_DAC1_RIGHT_MIXER_ROUTING, val);
+
+	val = wm8994_read(codec, 0x102);
+	val &= ~(0x0003);
+	val = (0x0003);
+	wm8994_write(codec,0x102, val);
+
+	val = wm8994_read(codec, 0x56);
+	val &= ~(0x0003);
+	val = (0x0003);
+	wm8994_write(codec,0x56, val);
+
+	val = wm8994_read(codec, 0x102);
+	val &= ~(0x0000);
+	val = (0x0000);
+	wm8994_write(codec,0x102, val);
+
+	val = wm8994_read(codec, WM8994_CLASS_W_1);
+	val &= ~(0x0005);
+	val |= (0x0005);
+	wm8994_write(codec, WM8994_CLASS_W_1, val);
+
+	// Headset Control
+	if(!wm8994->testmode_config_flag)
+	{
+		val = wm8994_read(codec, WM8994_LEFT_OUTPUT_VOLUME);
+		val &= ~(WM8994_HPOUT1L_MUTE_N_MASK|WM8994_HPOUT1L_VOL_MASK);
+		val |= (WM8994_HPOUT1_VU|WM8994_HPOUT1L_MUTE_N|TUNING_VOIP_EAR_OUTPUTL_VOL);
+		wm8994_write(codec, WM8994_LEFT_OUTPUT_VOLUME, val);
+
+		val = wm8994_read(codec, WM8994_RIGHT_OUTPUT_VOLUME);
+		val &= ~(WM8994_HPOUT1R_MUTE_N_MASK|WM8994_HPOUT1R_VOL_MASK);
+		val |= (WM8994_HPOUT1_VU|WM8994_HPOUT1R_MUTE_N|TUNING_VOIP_EAR_OUTPUTR_VOL);
+		wm8994_write(codec, WM8994_RIGHT_OUTPUT_VOLUME, val);
+
+		val = wm8994_read(codec, WM8994_LEFT_OPGA_VOLUME);
+		val &= ~(WM8994_MIXOUTL_MUTE_N_MASK|WM8994_MIXOUTL_VOL_MASK);
+		val |= (WM8994_MIXOUT_VU|WM8994_MIXOUTL_MUTE_N|TUNING_VOIP_EAR_OPGAL_VOL);
+		wm8994_write(codec, WM8994_LEFT_OPGA_VOLUME, val);
+
+		val = wm8994_read(codec, WM8994_RIGHT_OPGA_VOLUME);
+		val &= ~(WM8994_MIXOUTR_MUTE_N_MASK|WM8994_MIXOUTR_VOL_MASK);
+		val |= (WM8994_MIXOUT_VU|WM8994_MIXOUTR_MUTE_N|TUNING_VOIP_EAR_OPGAR_VOL);
+		wm8994_write(codec, WM8994_RIGHT_OPGA_VOLUME, val);
+	}
+
+	val = wm8994_read(codec, WM8994_DC_SERVO_2);
+	val &= ~(0x03E0);
+	val = (0x03E0);
+	wm8994_write(codec, WM8994_DC_SERVO_2, val);
+
+	//Enable vmid,bias, hp left and right
+	val = (WM8994_BIAS_ENA|WM8994_VMID_SEL_NORMAL|WM8994_HPOUT1R_ENA|WM8994_HPOUT1L_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_1, val);
+
+	val = wm8994_read(codec, WM8994_ANALOGUE_HP_1);
+	val &= ~(0x0022);
+	val = 0x0022;
+	wm8994_write(codec, WM8994_ANALOGUE_HP_1, val);
+
+	//Enable Charge Pump	
+	val = wm8994_read(codec, WM8994_CHARGE_PUMP_1);
+	val &= ~(WM8994_CP_ENA_MASK);
+	val |= (WM8994_CP_ENA|WM8994_CP_ENA_DEFAULT); // this is from wolfson
+	wm8994_write(codec, WM8994_CHARGE_PUMP_1, val);
+
+	msleep(5);// 20ms delay
+
+	if(!wm8994->testmode_config_flag)
+	{
+		val = wm8994_read(codec, WM8994_AIF1_CONTROL_2);
+		val &= ~(WM8994_AIF1DAC_BOOST_MASK);
+		val |= (TUNING_VOIP_EAR_AIF1DAC_BOOST<<WM8994_AIF1DAC_BOOST_SHIFT); // 00 = 0dB, 01 = +6dB, 02 = +12dB, 03 = +18dB
+		wm8994_write(codec, WM8994_AIF1_CONTROL_2, val);
+	}
+
+	//Enable Dac1 and DAC2 and the Timeslot0 for AIF1
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_5);
+	val &= ~(WM8994_DAC1R_ENA_MASK|WM8994_DAC1L_ENA_MASK|WM8994_AIF1DAC1R_ENA_MASK|WM8994_AIF1DAC1L_ENA_MASK);
+	val |= (WM8994_AIF1DAC1L_ENA|WM8994_AIF1DAC1R_ENA|WM8994_DAC1L_ENA|WM8994_DAC1R_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_5, val);
+
+	// 2DH // DAC1L_TO_HPOUT1L set
+	val = wm8994_read(codec, WM8994_OUTPUT_MIXER_1);
+	val &=  ~(WM8994_DAC1L_TO_HPOUT1L_MASK|WM8994_DAC1L_TO_MIXOUTL_MASK);
+	val |= (WM8994_DAC1L_TO_MIXOUTL);  	
+	wm8994_write(codec, WM8994_OUTPUT_MIXER_1, val);
+
+	// Enable DAC1R to HPOUT1R path
+	val = wm8994_read(codec, WM8994_OUTPUT_MIXER_2);
+	val &= ~(WM8994_DAC1R_TO_HPOUT1R_MASK|WM8994_DAC1R_TO_MIXOUTR_MASK);
+	val |= (WM8994_DAC1R_TO_MIXOUTR);
+	wm8994_write(codec, WM8994_OUTPUT_MIXER_2, val);
+
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_3);
+	val &= ~(WM8994_MIXOUTLVOL_ENA_MASK|WM8994_MIXOUTRVOL_ENA_MASK|WM8994_MIXOUTL_ENA_MASK|WM8994_MIXOUTR_ENA_MASK);
+	val |= (WM8994_MIXOUTL_ENA|WM8994_MIXOUTR_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_3, 0x0030);
+
+	val = wm8994_read(codec, WM8994_DC_SERVO_1);
+	val &= ~(0x0303);
+	val = (0x0303);
+	wm8994_write(codec, WM8994_DC_SERVO_1, val);
+
+	msleep(160); // 160ms delay
+
+	valBefore = wm8994_read(codec, WM8994_DC_SERVO_4);
+
+	valLow=(signed char)(valBefore & 0xff);
+	valHigh=(signed char)((valBefore>>8)&0xff);
+	valLow1 = ((signed short)(valLow-5))&0x00ff;
+	valHigh1 = (((signed short)(valHigh-5))<<8)&0xff00;
+	valAfter = (valLow1|valHigh1);
+	wm8994_write(codec, WM8994_DC_SERVO_4, valAfter);
+
+	val = wm8994_read(codec, WM8994_DC_SERVO_1);
+	val &= ~(0x000F);
+	val = (0x000F);
+	wm8994_write(codec, WM8994_DC_SERVO_1, val);
+
+	msleep(20);
+
+	// Intermediate HP settings
+	val = wm8994_read(codec, WM8994_ANALOGUE_HP_1);
+	val &= ~(WM8994_HPOUT1R_DLY_MASK|WM8994_HPOUT1R_OUTP_MASK|WM8994_HPOUT1R_RMV_SHORT_MASK|
+		WM8994_HPOUT1L_DLY_MASK|WM8994_HPOUT1L_OUTP_MASK|WM8994_HPOUT1L_RMV_SHORT_MASK);
+	val = (WM8994_HPOUT1L_RMV_SHORT|WM8994_HPOUT1L_OUTP|WM8994_HPOUT1L_DLY|WM8994_HPOUT1R_RMV_SHORT|
+		WM8994_HPOUT1R_OUTP|WM8994_HPOUT1R_DLY);
+	wm8994_write(codec, WM8994_ANALOGUE_HP_1, val);
+
+	//Unmute DAC1 left
+	val = wm8994_read(codec, WM8994_DAC1_LEFT_VOLUME);
+	val &= ~(WM8994_DAC1L_MUTE_MASK|WM8994_DAC1L_VOL_MASK);
+	val |= (TUNING_DAC1L_VOL);
+	wm8994_write(codec, WM8994_DAC1_LEFT_VOLUME, val);
+
+	//Unmute and volume ctrl RightDAC
+	val = wm8994_read(codec, WM8994_DAC1_RIGHT_VOLUME);
+	val &= ~(WM8994_DAC1R_MUTE_MASK|WM8994_DAC1R_VOL_MASK);
+	val |= (TUNING_DAC1R_VOL); //0 db volume
+	wm8994_write(codec, WM8994_DAC1_RIGHT_VOLUME, val);
+
+	// Unmute the AF1DAC1	
+	val = wm8994_read(codec, WM8994_AIF1_DAC1_FILTERS_1);
+	val &= ~(WM8994_AIF1DAC1_MUTE_MASK|WM8994_AIF1DAC1_MONO_MASK);
+	val |= (WM8994_AIF1DAC1_UNMUTE);
+	wm8994_write(codec, WM8994_AIF1_DAC1_FILTERS_1, val);
+
+	printk("[WM8994] wm8994_set_voipcall_headset - rec ear mic\n");
+	// 300H // Mixing left channel output to right channel // val: 0x0010
+	val = wm8994_read(codec, WM8994_AIF1_CONTROL_1);
+	val &= ~(WM8994_AIF1ADCL_SRC_MASK|WM8994_AIF1ADCR_SRC_MASK);
+	val |= (WM8994_AIF1ADCL_SRC|WM8994_AIF1ADCR_SRC);
+	wm8994_write(codec, WM8994_AIF1_CONTROL_1, val);
+
+	wm8994_write(codec, WM8994_ANTIPOP_2, 0x68); // Ear mic volume issue fix
+
+	// 700H // GPIO1 // GP1_DIR IN, GP1_PD EN, GP1_DB DE-BOUNCE, GP1_FN = LOGIC LVL 0
+	wm8994_write(codec, WM8994_GPIO_1, 0xA101);
+
+	// 02H // MIXINR_ENA, IN1R_ENA
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_2);
+	val &= ~(WM8994_MIXINR_ENA_MASK|WM8994_IN1R_ENA_MASK);
+	val |= (WM8994_MIXINR_ENA|WM8994_IN1R_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_2, val);
+
+	if(!wm8994->testmode_config_flag)
+	{	
+		// 1AH // IN1R PGA // IN1R UNMUTE, SET VOL
+		val = wm8994_read(codec, WM8994_RIGHT_LINE_INPUT_1_2_VOLUME);
+		val &= ~(WM8994_IN1R_MUTE_MASK|WM8994_IN1R_VOL_MASK);
+		val |= (WM8994_IN1R_VU|TUNING_VOIP_EAR_INPUTMIX_VOL);
+		wm8994_write(codec, WM8994_RIGHT_LINE_INPUT_1_2_VOLUME, val);
+
+		// 2AH // MIXINR PGA // IN2R_TO_MIXINR MUTE, IN1R_TO_MIXINR UNMUTE, 0dB
+		val = wm8994_read(codec, WM8994_INPUT_MIXER_4);
+		val &= ~(WM8994_IN1R_TO_MIXINR_MASK|WM8994_IN1R_MIXINR_VOL_MASK|WM8994_MIXOUTR_MIXINR_VOL_MASK);
+		//val |= (WM8994_IN1R_TO_MIXINR|WM8994_IN1R_MIXINR_VOL); // [DI10-1941] VoIP BoostOn(+30dB)
+		val |= (WM8994_IN1R_TO_MIXINR);	// [DI28-2336] back to BoostOff (0dB)
+		wm8994_write(codec, WM8994_INPUT_MIXER_4, val);
+	}
+
+	// 401H // AIF1 ADC1 Right Volume
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_RIGHT_VOLUME);
+	val &= ~(WM8994_AIF1ADC1R_VOL_MASK);
+	val |= (WM8994_AIF1ADC1_VU|TUNING_VOIP_EAR_AIF1ADCR_VOL); // ADC Digital Gain
+	wm8994_write(codec, WM8994_AIF1_ADC1_RIGHT_VOLUME, val);
+
+	// 28H // INPUT MIXER // IN1RP/N_TO_IN1R PGA
+	val = wm8994_read(codec, WM8994_INPUT_MIXER_2);
+	val &= ~(WM8994_IN1RP_TO_IN1R_MASK|WM8994_IN1RN_TO_IN1R_MASK);
+	val |= (WM8994_IN1RP_TO_IN1R|WM8994_IN1RN_TO_IN1R);
+	wm8994_write(codec, WM8994_INPUT_MIXER_2, val);
+
+	// 410H // AIF1 ADC1 Filters // AIF1 ADC1 hi-path filter on
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_FILTERS);
+	val &= ~(WM8994_AIF1ADC1L_HPF|WM8994_AIF1ADC1R_HPF);
+	val |= (WM8994_AIF1ADC1L_HPF|WM8994_AIF1ADC1R_HPF); // hi-path filter on (L/R)
+	wm8994_write(codec, WM8994_AIF1_ADC1_FILTERS, 0x3800); // [DJ05-2239] // 0x5800 -> 0x3800
+
+	// 04H // AIF1ADC1R_ENA, ADCR_ENA
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_4);
+	val &= ~(WM8994_AIF1ADC1R_ENA_MASK|WM8994_ADCR_ENA_MASK);
+	val |= (WM8994_AIF1ADC1R_ENA|WM8994_ADCR_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_4, val);
+
+	// 607H // ADC1R_TO_AIF1ADC1R (TIMESLOT 0) ASSIGN
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_RIGHT_MIXER_ROUTING);
+	val &= ~(WM8994_ADC1R_TO_AIF1ADC1R_MASK);
+	val |= (WM8994_ADC1R_TO_AIF1ADC1R);
+	wm8994_write(codec, WM8994_AIF1_ADC1_RIGHT_MIXER_ROUTING, val);
+}
+
+#if (defined FEATURE_3POLE_CALL_SUPPORT)
+void wm8994_set_voipcall_headphone(struct snd_soc_codec *codec)
+{
+	struct wm8994_priv *wm8994 = codec->private_data;
+
+	u16 val;
+	u16 valBefore = 0;
+	u16 valAfter = 0;
+	u16 valLow1 = 0;
+	u16 valHigh1 = 0;
+	u8 valLow = 0;
+	u8 valHigh = 0;
+
+	DEBUG_LOG("");
+
+	//Configuring the Digital Paths
+	// Enable the Timeslot0 to DAC1L
+	val = wm8994_read(codec, WM8994_DAC1_LEFT_MIXER_ROUTING);
+	val &= ~(WM8994_AIF1DAC1L_TO_DAC1L_MASK);
+	val |= WM8994_AIF1DAC1L_TO_DAC1L;
+	wm8994_write(codec, WM8994_DAC1_LEFT_MIXER_ROUTING, val);
+
+	//Enable the Timeslot0 to DAC1R
+	val = wm8994_read(codec, WM8994_DAC1_RIGHT_MIXER_ROUTING);
+	val &= ~(WM8994_AIF1DAC1R_TO_DAC1R_MASK);
+	val |= WM8994_AIF1DAC1R_TO_DAC1R;
+	wm8994_write(codec, WM8994_DAC1_RIGHT_MIXER_ROUTING, val);
+
+	val = wm8994_read(codec, 0x102);
+	val &= ~(0x0003);
+	val = (0x0003);
+	wm8994_write(codec,0x102, val);
+
+	val = wm8994_read(codec, 0x56);
+	val &= ~(0x0003);
+	val = (0x0003);
+	wm8994_write(codec,0x56, val);
+
+	val = wm8994_read(codec, 0x102);
+	val &= ~(0x0000);
+	val = (0x0000);
+	wm8994_write(codec,0x102, val);
+
+	val = wm8994_read(codec, WM8994_CLASS_W_1);
+	val &= ~(0x0005);
+	val |= (0x0005);
+	wm8994_write(codec, WM8994_CLASS_W_1, val);
+
+	// Headset Control
+	if(!wm8994->testmode_config_flag)
+	{
+		val = wm8994_read(codec, WM8994_LEFT_OUTPUT_VOLUME);
+		val &= ~(WM8994_HPOUT1L_MUTE_N_MASK|WM8994_HPOUT1L_VOL_MASK);
+		val |= (WM8994_HPOUT1_VU|WM8994_HPOUT1L_MUTE_N|TUNING_VOIP_EAR_OUTPUTL_VOL);
+		wm8994_write(codec, WM8994_LEFT_OUTPUT_VOLUME, val);
+
+		val = wm8994_read(codec, WM8994_RIGHT_OUTPUT_VOLUME);
+		val &= ~(WM8994_HPOUT1R_MUTE_N_MASK|WM8994_HPOUT1R_VOL_MASK);
+		val |= (WM8994_HPOUT1_VU|WM8994_HPOUT1R_MUTE_N|TUNING_VOIP_EAR_OUTPUTR_VOL);
+		wm8994_write(codec, WM8994_RIGHT_OUTPUT_VOLUME, val);
+
+		val = wm8994_read(codec, WM8994_LEFT_OPGA_VOLUME);
+		val &= ~(WM8994_MIXOUTL_MUTE_N_MASK|WM8994_MIXOUTL_VOL_MASK);
+		val |= (WM8994_MIXOUT_VU|WM8994_MIXOUTL_MUTE_N|TUNING_VOIP_EAR_OPGAL_VOL);
+		wm8994_write(codec, WM8994_LEFT_OPGA_VOLUME, val);
+
+		val = wm8994_read(codec, WM8994_RIGHT_OPGA_VOLUME);
+		val &= ~(WM8994_MIXOUTR_MUTE_N_MASK|WM8994_MIXOUTR_VOL_MASK);
+		val |= (WM8994_MIXOUT_VU|WM8994_MIXOUTR_MUTE_N|TUNING_VOIP_EAR_OPGAR_VOL);
+		wm8994_write(codec, WM8994_RIGHT_OPGA_VOLUME, val);
+	}
+
+	val = wm8994_read(codec, WM8994_DC_SERVO_2);
+	val &= ~(0x03E0);
+	val = (0x03E0);
+	wm8994_write(codec, WM8994_DC_SERVO_2, val);
+
+	//Enable vmid,bias, hp left and right
+	val = (WM8994_BIAS_ENA|WM8994_VMID_SEL_NORMAL|WM8994_HPOUT1R_ENA|WM8994_HPOUT1L_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_1, val);
+
+	val = wm8994_read(codec, WM8994_ANALOGUE_HP_1);
+	val &= ~(0x0022);
+	val = 0x0022;
+	wm8994_write(codec, WM8994_ANALOGUE_HP_1, val);
+
+	//Enable Charge Pump	
+	val = wm8994_read(codec, WM8994_CHARGE_PUMP_1);
+	val &= ~(WM8994_CP_ENA_MASK);
+	val |= (WM8994_CP_ENA|WM8994_CP_ENA_DEFAULT); // this is from wolfson
+	wm8994_write(codec, WM8994_CHARGE_PUMP_1, val);
+
+	msleep(5);// 20ms delay
+
+	if(!wm8994->testmode_config_flag)
+	{
+		val = wm8994_read(codec, WM8994_AIF1_CONTROL_2);
+		val &= ~(WM8994_AIF1DAC_BOOST_MASK);
+		val |= (TUNING_VOIP_EAR_AIF1DAC_BOOST<<WM8994_AIF1DAC_BOOST_SHIFT); // 00 = 0dB, 01 = +6dB, 02 = +12dB, 03 = +18dB
+		wm8994_write(codec, WM8994_AIF1_CONTROL_2, val);
+	}
+
+	//Enable Dac1 and DAC2 and the Timeslot0 for AIF1	
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_5);
+	val &= ~(WM8994_DAC1R_ENA_MASK|WM8994_DAC1L_ENA_MASK|WM8994_AIF1DAC1R_ENA_MASK|WM8994_AIF1DAC1L_ENA_MASK);
+	val |= (WM8994_AIF1DAC1L_ENA|WM8994_AIF1DAC1R_ENA|WM8994_DAC1L_ENA|WM8994_DAC1R_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_5, val);
+
+	// 2DH // DAC1L_TO_HPOUT1L set
+	val = wm8994_read(codec, WM8994_OUTPUT_MIXER_1);
+	val &=  ~(WM8994_DAC1L_TO_HPOUT1L_MASK|WM8994_DAC1L_TO_MIXOUTL_MASK);
+	val |= (WM8994_DAC1L_TO_MIXOUTL);  	
+	wm8994_write(codec, WM8994_OUTPUT_MIXER_1, val);
+
+	// Enable DAC1R to HPOUT1R path
+	val = wm8994_read(codec, WM8994_OUTPUT_MIXER_2);
+	val &= ~(WM8994_DAC1R_TO_HPOUT1R_MASK|WM8994_DAC1R_TO_MIXOUTR_MASK);
+	val |= (WM8994_DAC1R_TO_MIXOUTR);
+	wm8994_write(codec, WM8994_OUTPUT_MIXER_2, val);
+
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_3);
+	val &= ~(WM8994_MIXOUTLVOL_ENA_MASK|WM8994_MIXOUTRVOL_ENA_MASK|WM8994_MIXOUTL_ENA_MASK|WM8994_MIXOUTR_ENA_MASK);
+	val |= (WM8994_MIXOUTL_ENA|WM8994_MIXOUTR_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_3, 0x0030);
+
+	val = wm8994_read(codec, WM8994_DC_SERVO_1);
+	val &= ~(0x0303);
+	val = (0x0303);
+	wm8994_write(codec, WM8994_DC_SERVO_1, val);
+
+	msleep(160); // 160ms delay
+
+	valBefore = wm8994_read(codec, WM8994_DC_SERVO_4);
+
+	valLow=(signed char)(valBefore & 0xff);
+	valHigh=(signed char)((valBefore>>8)&0xff);
+	valLow1 = ((signed short)(valLow-5))&0x00ff;
+	valHigh1 = (((signed short)(valHigh-5))<<8)&0xff00;
+	valAfter = (valLow1|valHigh1);
+	wm8994_write(codec, WM8994_DC_SERVO_4, valAfter);
+
+	val = wm8994_read(codec, WM8994_DC_SERVO_1);
+	val &= ~(0x000F);
+	val = (0x000F);
+	wm8994_write(codec, WM8994_DC_SERVO_1, val);
+
+	msleep(20);
+
+	// Intermediate HP settings
+	val = wm8994_read(codec, WM8994_ANALOGUE_HP_1);
+	val &= ~(WM8994_HPOUT1R_DLY_MASK|WM8994_HPOUT1R_OUTP_MASK|WM8994_HPOUT1R_RMV_SHORT_MASK|
+		WM8994_HPOUT1L_DLY_MASK|WM8994_HPOUT1L_OUTP_MASK|WM8994_HPOUT1L_RMV_SHORT_MASK);
+	val = (WM8994_HPOUT1L_RMV_SHORT|WM8994_HPOUT1L_OUTP|WM8994_HPOUT1L_DLY|WM8994_HPOUT1R_RMV_SHORT|
+		WM8994_HPOUT1R_OUTP|WM8994_HPOUT1R_DLY);
+	wm8994_write(codec, WM8994_ANALOGUE_HP_1, val);
+
+	//Unmute DAC1 left
+	val = wm8994_read(codec, WM8994_DAC1_LEFT_VOLUME);
+	val &= ~(WM8994_DAC1L_MUTE_MASK|WM8994_DAC1L_VOL_MASK);
+	val |= (TUNING_DAC1L_VOL);
+	wm8994_write(codec, WM8994_DAC1_LEFT_VOLUME, val);
+
+	//Unmute and volume ctrl RightDAC
+	val = wm8994_read(codec, WM8994_DAC1_RIGHT_VOLUME);
+	val &= ~(WM8994_DAC1R_MUTE_MASK|WM8994_DAC1R_VOL_MASK);
+	val |= (TUNING_DAC1R_VOL); //0 db volume
+	wm8994_write(codec, WM8994_DAC1_RIGHT_VOLUME, val);
+
+	// Unmute the AF1DAC1	
+	val = wm8994_read(codec, WM8994_AIF1_DAC1_FILTERS_1);
+	val &= ~(WM8994_AIF1DAC1_MUTE_MASK|WM8994_AIF1DAC1_MONO_MASK);
+	val |= (WM8994_AIF1DAC1_UNMUTE);
+	wm8994_write(codec, WM8994_AIF1_DAC1_FILTERS_1, val);
+
+	printk("[WM8994] wm8994_set_voipcall_headphone - rec main mic\n");
+
+	// 300H // Mixing left channel output to right channel // val: 0x0010
+	val = wm8994_read(codec, WM8994_AIF1_CONTROL_1);
+	val &= ~(WM8994_AIF1ADCL_SRC_MASK|WM8994_AIF1ADCR_SRC_MASK);
+	wm8994_write(codec, WM8994_AIF1_CONTROL_1, val);
+
+	wm8994_write(codec, WM8994_ANTIPOP_2, 0x68); // Main mic volume issue fix
+
+	// 01H // VMID_SEL_NORMAL, BIAS_ENA, MICB1_ENA
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_1);
+	val &= ~(WM8994_VMID_SEL_MASK|WM8994_BIAS_ENA_MASK);
+	val |= (WM8994_VMID_SEL_NORMAL|WM8994_BIAS_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_1, val);
+
+	// 700H // GPIO1 // GP1_DIR IN, GP1_PD EN, GP1_DB DE-BOUNCE, GP1_FN = LOGIC LVL 0
+	wm8994_write(codec, WM8994_GPIO_1, 0xA101);
+
+	// 02H // MIXINL_ENA, IN1L_ENA
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_2);
+	val &= ~(WM8994_MIXINL_ENA_MASK|WM8994_IN1L_ENA_MASK);
+	val |= (WM8994_MIXINL_ENA|WM8994_IN1L_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_2, val);
+
+	if(!wm8994->testmode_config_flag)
+	{	
+		// 18H // IN1L PGA // IN1L UNMUTE, SET VOL
+		val = wm8994_read(codec, WM8994_LEFT_LINE_INPUT_1_2_VOLUME);
+		val &= ~(WM8994_IN1L_MUTE_MASK|WM8994_IN1L_VOL_MASK);
+		val |= (WM8994_IN1L_VU|TUNING_VOIP_3P_INPUTMIX_VOL);
+		wm8994_write(codec, WM8994_LEFT_LINE_INPUT_1_2_VOLUME, val);
+
+		// 29H // MIXINL PGA // IN2L_TO_MIXINL MUTE, IN1L_TO_MIXINL UNMUTE, 0dB
+		val = wm8994_read(codec, WM8994_INPUT_MIXER_3);
+		val &= ~(WM8994_IN1L_TO_MIXINL_MASK|WM8994_IN1L_MIXINL_VOL_MASK|WM8994_MIXOUTL_MIXINL_VOL_MASK);
+		//val |= (WM8994_IN1L_TO_MIXINL|WM8994_IN1L_MIXINL_VOL); // [DI10-1941] VoIP BoostOn (+30dB)
+		val |= (WM8994_IN1L_TO_MIXINL);	// [DI28-2336] back to BoostOff (0dB)
+		wm8994_write(codec, WM8994_INPUT_MIXER_3, val);
+	}
+
+	// 400H // AIF1 ADC1 Left Volume // Gain Tuning // H/W req.
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_LEFT_VOLUME);
+	val &= ~(WM8994_AIF1ADC1L_VOL_MASK);
+	val |= (WM8994_AIF1ADC1_VU|TUNING_VOIP_MAIN_AIF1ADCL_VOL); // ADC Digital Gain
+	wm8994_write(codec, WM8994_AIF1_ADC1_LEFT_VOLUME, val);
+
+	// 28H // INPUT MIXER // IN1LP/N_TO_IN1L PGA
+	val = wm8994_read(codec, WM8994_INPUT_MIXER_2);	
+	val &= (WM8994_IN1LP_TO_IN1L_MASK|WM8994_IN1LN_TO_IN1L_MASK);
+	val |= (WM8994_IN1LP_TO_IN1L|WM8994_IN1LN_TO_IN1L);
+	wm8994_write(codec, WM8994_INPUT_MIXER_2, val);
+
+	// 410H // AIF1 ADC1 Filters // AIF1 ADC1 hi-path filter on
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_FILTERS);
+	val &= ~(WM8994_AIF1ADC1L_HPF|WM8994_AIF1ADC1R_HPF);
+	val |= (WM8994_AIF1ADC1L_HPF|WM8994_AIF1ADC1R_HPF); // hi-path filter on (L/R)
+	wm8994_write(codec, WM8994_AIF1_ADC1_FILTERS, 0x3800); // [DJ05-2239] // 0x5800 -> 0x3800
+
+	// 04H // AIF1ADC1L_ENA, ADCL_ENA 
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_4);
+	val &= ~(WM8994_AIF1ADC1L_ENA_MASK|WM8994_ADCL_ENA_MASK);
+	val |= (WM8994_AIF1ADC1L_ENA|WM8994_ADCL_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_4, val);
+
+	// 606H // ADC1L_TO_AIF1ADC1L (TIMESLOT 0) ASSIGN
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_LEFT_MIXER_ROUTING);
+	val &= ~(WM8994_ADC1L_TO_AIF1ADC1L_MASK);
+	val |= (WM8994_ADC1L_TO_AIF1ADC1L);
+	wm8994_write(codec, WM8994_AIF1_ADC1_LEFT_MIXER_ROUTING, val);
+}
+#endif
+
+void wm8994_set_voipcall_speaker(struct snd_soc_codec *codec)
+{
+	struct wm8994_priv *wm8994 = codec->private_data;
+
+	u16 val;
+
+	DEBUG_LOG("");
+    
+	// 01H // Disable end point for preventing pop up noise.
+	val = (WM8994_BIAS_ENA|WM8994_VMID_SEL_NORMAL);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_1, val);
+
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_3);
+	val &= ~(WM8994_SPKLVOL_ENA_MASK);
+	val |= (WM8994_SPKLVOL_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_3, val);
+
+	val = wm8994_read(codec, WM8994_SPKMIXL_ATTENUATION);
+	val &= ~(WM8994_SPKMIXL_VOL_MASK);
+	val |= (TUNING_SPKMIXL_ATTEN);
+	wm8994_write(codec, WM8994_SPKMIXL_ATTENUATION, val);
+
+	val = wm8994_read(codec, WM8994_SPKMIXR_ATTENUATION);
+	val &= ~(WM8994_SPKMIXR_VOL_MASK);
+	//val |= (TUNING_SPKMIXR_ATTEN);
+	wm8994_write(codec, WM8994_SPKMIXR_ATTENUATION, val);
+
+	if(!wm8994->testmode_config_flag)
+	{
+		val = wm8994_read(codec, WM8994_SPEAKER_VOLUME_LEFT);
+		val &= ~(WM8994_SPKOUTL_MUTE_N_MASK|WM8994_SPKOUTL_VOL_MASK);
+		val |= (WM8994_SPKOUT_VU|WM8994_SPKOUTL_MUTE_N|TUNING_VOIP_SPKL_VOL);
+		wm8994_write(codec, WM8994_SPEAKER_VOLUME_LEFT, val);
+
+		val = wm8994_read(codec, WM8994_SPEAKER_VOLUME_RIGHT);
+		val &= ~(WM8994_SPKOUTR_MUTE_N_MASK|WM8994_SPKOUTR_VOL_MASK);
+		//val |= (WM8994_SPKOUT_VU|WM8994_SPKOUTR_MUTE_N|TUNING_MP3_SPKL_VOL);
+		wm8994_write(codec, WM8994_SPEAKER_VOLUME_RIGHT, val);
+
+		val = wm8994_read(codec, WM8994_CLASSD);
+		val &= ~(WM8994_SPKOUTL_BOOST_MASK);
+		val |= (TUNING_VOIP_CLASSD_VOL<<WM8994_SPKOUTL_BOOST_SHIFT);
+		wm8994_write(codec, WM8994_CLASSD, val);
+	}
+
+	// 610H // DAC1 Left VOL, Unmute
+	val = wm8994_read(codec, WM8994_DAC1_LEFT_VOLUME);
+	val &= ~(WM8994_DAC1L_MUTE_MASK|WM8994_DAC1L_VOL_MASK);
+	val |= (WM8994_DAC1_VU|TUNING_DAC1L_VOL); 
+	wm8994_write(codec, WM8994_DAC1_LEFT_VOLUME, val);
+
+	// 611H // DAC1 Right VOL, Unmute
+	val = wm8994_read(codec, WM8994_DAC1_RIGHT_VOLUME); 
+	val &= ~(WM8994_DAC1R_MUTE_MASK|WM8994_DAC1R_VOL_MASK);
+	val |= (WM8994_DAC1_VU|TUNING_DAC1R_VOL);
+	wm8994_write(codec, WM8994_DAC1_RIGHT_VOLUME, val);
+
+	if(!wm8994->testmode_config_flag)
+	{
+		val = wm8994_read(codec, WM8994_AIF1_CONTROL_2); 
+		val &= ~(WM8994_AIF1DAC_BOOST_MASK);
+		val |= (TUNING_VOIP_SPK_AIF1DAC_BOOST<<WM8994_AIF1DAC_BOOST_SHIFT); // 00 0dB 01 +6dB 02 +12dB 03 +18dB
+		wm8994_write(codec, WM8994_AIF1_CONTROL_2, val);
+	}
+
+	val = wm8994_read(codec, WM8994_SPKOUT_MIXERS);
+	val &= ~(WM8994_SPKMIXL_TO_SPKOUTL_MASK|WM8994_SPKMIXL_TO_SPKOUTR_MASK|WM8994_SPKMIXR_TO_SPKOUTR_MASK);
+	val |= (WM8994_SPKMIXL_TO_SPKOUTL);
+	wm8994_write(codec, WM8994_SPKOUT_MIXERS, val);
+
+	// 36H // Unmute the DAC path
+	val = wm8994_read(codec, WM8994_SPEAKER_MIXER);
+	val &= ~(WM8994_DAC1L_TO_SPKMIXL_MASK);
+	val |= (WM8994_DAC1L_TO_SPKMIXL);
+	wm8994_write(codec, WM8994_SPEAKER_MIXER, val);
+
+	// 05H // AIF1DAC1L/R_ENA, DAC1L_ENA
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_5);
+	val &= ~(WM8994_AIF1DAC1L_ENA_MASK|WM8994_AIF1DAC1R_ENA_MASK|WM8994_DAC1L_ENA_MASK);
+	val |= (WM8994_AIF1DAC1L_ENA|WM8994_AIF1DAC1R_ENA|WM8994_DAC1L_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_5, val);
+
+	// 420H // AIF1DAC1 Unmute, Mono
+	val = wm8994_read(codec, WM8994_AIF1_DAC1_FILTERS_1);
+	val &= ~(WM8994_AIF1DAC1_MUTE_MASK|WM8994_AIF1DAC1_MONO_MASK);
+	val |= (WM8994_AIF1DAC1_UNMUTE|WM8994_AIF1DAC1_MONO);
+	wm8994_write(codec, WM8994_AIF1_DAC1_FILTERS_1, val);
+
+	// 601H // AIF1DAC1L_TO_DAC1L // Enable timeslot0 to left dac
+	val = wm8994_read(codec, WM8994_DAC1_LEFT_MIXER_ROUTING);
+	val &= ~(WM8994_AIF1DAC1L_TO_DAC1L_MASK);
+	val |= (WM8994_AIF1DAC1L_TO_DAC1L);
+	wm8994_write(codec, WM8994_DAC1_LEFT_MIXER_ROUTING, val);
+	
+	// 01H // SPKOUTL_ENA
+	val = (WM8994_SPKOUTL_ENA|WM8994_VMID_SEL_NORMAL|WM8994_BIAS_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_1, val);
+
+	printk("[WM8994] wm8994_set_voipcall_speaker - rec main mic\n");
+
+	// 300H // Mixing left channel output to right channel // val: 0x0010
+	val = wm8994_read(codec, WM8994_AIF1_CONTROL_1);
+	val &= ~(WM8994_AIF1ADCL_SRC_MASK|WM8994_AIF1ADCR_SRC_MASK);
+	wm8994_write(codec, WM8994_AIF1_CONTROL_1, val);
+
+	wm8994_write(codec, WM8994_ANTIPOP_2, 0x68); // Main mic volume issue fix
+
+	// 700H // GPIO1 // GP1_DIR IN, GP1_PD EN, GP1_DB DE-BOUNCE, GP1_FN = LOGIC LVL 0
+	wm8994_write(codec, WM8994_GPIO_1, 0xA101);
+
+	// 02H // MIXINL_ENA, IN1L_ENA
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_2);
+	val &= ~(WM8994_MIXINL_ENA_MASK|WM8994_IN1L_ENA_MASK);
+	val |= (WM8994_MIXINL_ENA|WM8994_IN1L_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_2, val);
+
+	if(!wm8994->testmode_config_flag)
+	{	
+		// 18H // IN1L PGA // IN1L UNMUTE, SET VOL
+		val = wm8994_read(codec, WM8994_LEFT_LINE_INPUT_1_2_VOLUME);
+		val &= ~(WM8994_IN1L_MUTE_MASK|WM8994_IN1L_VOL_MASK);
+		val |= (WM8994_IN1L_VU|TUNING_VOIP_SPK_INPUTMIX_VOL);
+		wm8994_write(codec, WM8994_LEFT_LINE_INPUT_1_2_VOLUME, val);
+
+		// 29H // MIXINL PGA // IN2L_TO_MIXINL MUTE, IN1L_TO_MIXINL UNMUTE, 0dB
+		val = wm8994_read(codec, WM8994_INPUT_MIXER_3);
+		val &= ~(WM8994_IN1L_TO_MIXINL_MASK|WM8994_IN1L_MIXINL_VOL_MASK|WM8994_MIXOUTL_MIXINL_VOL_MASK);
+		//val |= (WM8994_IN1L_TO_MIXINL|WM8994_IN1L_MIXINL_VOL); // [DI10-1941] VoIP BoostOn (+30dB)
+		val |= (WM8994_IN1L_TO_MIXINL);	// [DI28-2336] back to BoostOff (0dB)
+		wm8994_write(codec, WM8994_INPUT_MIXER_3, val);
+	}
+
+	// 400H // AIF1 ADC1 Left Volume // Gain Tuning // H/W req.
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_LEFT_VOLUME);
+	val &= ~(WM8994_AIF1ADC1L_VOL_MASK);
+	val |= (WM8994_AIF1ADC1_VU|TUNING_VOIP_MAIN_AIF1ADCL_VOL); // ADC Digital Gain
+	wm8994_write(codec, WM8994_AIF1_ADC1_LEFT_VOLUME, val);
+
+	// 28H // INPUT MIXER // IN1LP/N_TO_IN1L PGA
+	val = wm8994_read(codec, WM8994_INPUT_MIXER_2);	
+	val &= (WM8994_IN1LP_TO_IN1L_MASK|WM8994_IN1LN_TO_IN1L_MASK);
+	val |= (WM8994_IN1LP_TO_IN1L|WM8994_IN1LN_TO_IN1L);
+	wm8994_write(codec, WM8994_INPUT_MIXER_2, val);
+
+	// 410H // AIF1 ADC1 Filters // AIF1 ADC1 hi-path filter on
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_FILTERS);
+	val &= ~(WM8994_AIF1ADC1L_HPF|WM8994_AIF1ADC1R_HPF);
+	val |= (WM8994_AIF1ADC1L_HPF|WM8994_AIF1ADC1R_HPF); // hi-path filter on (L/R)
+	wm8994_write(codec, WM8994_AIF1_ADC1_FILTERS, 0x3800); // [DJ05-2239] // 0x5800 -> 0x3800
+
+	// 04H // AIF1ADC1L_ENA, ADCL_ENA 
+	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_4);
+	val &= ~(WM8994_AIF1ADC1L_ENA_MASK|WM8994_ADCL_ENA_MASK);
+	val |= (WM8994_AIF1ADC1L_ENA|WM8994_ADCL_ENA);
+	wm8994_write(codec, WM8994_POWER_MANAGEMENT_4, val);
+
+	// 606H // ADC1L_TO_AIF1ADC1L (TIMESLOT 0) ASSIGN
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_LEFT_MIXER_ROUTING);
+	val &= ~(WM8994_ADC1L_TO_AIF1ADC1L_MASK);
+	val |= (WM8994_ADC1L_TO_AIF1ADC1L);
+	wm8994_write(codec, WM8994_AIF1_ADC1_LEFT_MIXER_ROUTING, val);
+}
+
+void wm8994_set_voipcall_bluetooth(struct snd_soc_codec *codec)
+{
+//	struct wm8994_priv *wm8994 = codec->private_data;
+
+	u16 val;
+
+	DEBUG_LOG("");
+
+    /* GPIO Configuration */
+	wm8994_write(codec, WM8994_GPIO_1, 0xA101);
+    wm8994_write(codec, WM8994_GPIO_2, 0xA101);
+    wm8994_write(codec, WM8994_GPIO_3, 0xA101);
+    wm8994_write(codec, WM8994_GPIO_4, 0xA101);
+    wm8994_write(codec, WM8994_GPIO_5, 0xA101);
+	wm8994_write(codec, WM8994_GPIO_6, 0xA101);
+    wm8994_write(codec, WM8994_GPIO_7, 0xA101);
+	wm8994_write(codec, WM8994_GPIO_8, 0xA101);
+	wm8994_write(codec, WM8994_GPIO_9, 0xA101);
+	wm8994_write(codec, WM8994_GPIO_10, 0xA101);
+	wm8994_write(codec, WM8994_GPIO_11, 0xA101);
+
+	/* FLL2	Setting */
+	wm8994_write(codec, WM8994_FLL2_CONTROL_2, 0x2F00); // FLL1 Ctrl2, FLL1 Setting
+	wm8994_write(codec, WM8994_FLL2_CONTROL_3, 0x3126); // FLL1 Ctrl3, K Value
+	wm8994_write(codec, WM8994_FLL2_CONTROL_4, 0x0100); // FLL1 Ctrl4, N Value
+	wm8994_write(codec, WM8994_FLL2_CONTROL_5, 0x0C88); // FLL1 Ctrl5
+	wm8994_write(codec, WM8994_FLL2_CONTROL_1, (WM8994_FLL2_FRACN_ENA|WM8994_FLL2_ENA));
+
+	wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0018); // AIF2 Clock Source = FLL2
+
+	/* Clocking - 8KHz */
+    wm8994_write(codec, WM8994_AIF2_RATE, 0x0003);
+
+	/* AIF2 Interface - PCM Stereo mode */
+	wm8994_write(codec, WM8994_AIF2_CONTROL_1, 0x4118); // DSP Mode, BCLK invert, LRCLK normal
+    wm8994_write(codec, WM8994_AIF2_BCLK, 0x40);
+    wm8994_write(codec, WM8994_AIF2_CONTROL_2, 0x4000); // Left & Right DAC receives left interface data
+    wm8994_write(codec, WM8994_AIF2_MASTER_SLAVE, 0x7000);
+
+    /* Analog Output Power Management */
+    wm8994_write(codec, WM8994_POWER_MANAGEMENT_1, 0x0003);
+    wm8994_write(codec, WM8994_POWER_MANAGEMENT_2, 0x6000);
+
+	/* Digital Path Enables and Unmutes */
+    wm8994_write(codec, WM8994_POWER_MANAGEMENT_4, 0x2202); // AIF2ADCL_ENA, AIF1ADC1L_ENA, ADCL_ENA
+    wm8994_write(codec, WM8994_POWER_MANAGEMENT_5, 0x220A); // AIF2DACL_ENA, AIF1DAC1L_ENA, DAC2L_ENA, DAC1L_ENA
+
+	/* Clocking */
+	val = wm8994_read(codec, WM8994_CLOCKING_1);
+	val |= (WM8994_DSP_FS2CLK_ENA);
+	wm8994_write(codec, WM8994_CLOCKING_1, val);
+
+    wm8994_write(codec, WM8994_GPIO_3, 0x0100); // 702h // GPIO3|BCLK2
+    wm8994_write(codec, WM8994_GPIO_5, 0x0100); // 704h // GPIO5|DACDAT2
+    wm8994_write(codec, WM8994_GPIO_8, 0x8100); // GPIO8|DACDAT3
+    wm8994_write(codec, WM8994_GPIO_9, 0x0100); // GPIO9|ADCDAT3
+    wm8994_write(codec, WM8994_GPIO_10, 0x0100); // GPIO10|LRCLK3
+    wm8994_write(codec, WM8994_GPIO_11, 0x0100); // GPIO11|BCLK3
+
+	//for BT DTMF Play
+	//Rx Path: AIF2ADCDAT2 select
+    //CP(CALL) Path: Analog
+	//AP(DTMF) Path: DACDAT1 select
+	//Tx Path: GPIO8/DACDAT3 select
+    wm8994_write(codec, WM8994_POWER_MANAGEMENT_6, 0x000A);
+
+    wm8994_write(codec, 0x604, WM8994_AIF1DAC1L_TO_DAC2L); // WM8994_DAC2_LEFT_MIXER_ROUTING
+    wm8994_write(codec, 0x612, 0x01C0); // DAC2L/R_VOL, 0dB, update
+
+	wm8994_write(codec, WM8994_OVERSAMPLING, 0x0000);
+    wm8994_write(codec, WM8994_AIF2_CLOCKING_1, 0x0019); // AIF2 Clock Source = FLL2
+
+	wm8994_write(codec, WM8994_AIF1_DAC1_FILTERS_1, 0x0000);  
+	wm8994_write(codec, WM8994_AIF2_DAC_FILTERS_1, 0x0080);
+
+    // 300H // Mixing left channel output to right channel // val: 0x0010
+	val = wm8994_read(codec, WM8994_AIF1_CONTROL_1);
+	val &= ~(WM8994_AIF1ADCL_SRC_MASK|WM8994_AIF1ADCR_SRC_MASK);
+	wm8994_write(codec, WM8994_AIF1_CONTROL_1, val);
+
+	// 606H // ADC1L_TO_AIF1ADC1L (TIMESLOT 0) ASSIGN
+	val = wm8994_read(codec, WM8994_AIF1_ADC1_LEFT_MIXER_ROUTING);
+	val &= ~(WM8994_ADC1L_TO_AIF1ADC1L_MASK);
+	val |= (WM8994_AIF2DACL_TO_AIF1ADC1L);
+	wm8994_write(codec, WM8994_AIF1_ADC1_LEFT_MIXER_ROUTING, val);
+}
+#endif
 
 void wm8994_set_fmradio_common(struct snd_soc_codec *codec, int onoff)
 {	

@@ -202,14 +202,14 @@ int dvfs_change_quick = 0;
 // jump to the given performance level
 static void set_dvfs_perf_level(unsigned int perf_level) 
 {
-	//unsigned long irqflags;
+	unsigned long irqflags;
 
-	spin_lock(&g_dvfslock);
+	spin_lock_irqsave(&g_dvfslock, irqflags);
 	if(s5pc11x_cpufreq_index > perf_level) {
 		s5pc11x_cpufreq_index = perf_level; // jump to specified level 
 		dvfs_change_quick = 1;
 	}
-	spin_unlock(&g_dvfslock);
+	spin_unlock_irqrestore(&g_dvfslock, irqflags);
 	return;
 }
 

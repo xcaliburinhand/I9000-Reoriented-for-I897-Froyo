@@ -1093,6 +1093,7 @@ static int too_many_isolated(struct zone *zone, int file,
 static inline bool should_reclaim_stall(unsigned long nr_taken,
 					unsigned long nr_freed,
 					int priority,
+					int lumpy_reclaim,
 					struct scan_control *sc)
 {
 	int lumpy_stall_priority;
@@ -1101,11 +1102,9 @@ static inline bool should_reclaim_stall(unsigned long nr_taken,
 	if (current_is_kswapd())
 		return false;
 
-#if 0
 	/* Only stall on lumpy reclaim */
-	if (!sc->lumpy_reclaim_mode)
+	if (!lumpy_reclaim)
 		return false;
-#endif
 
 	/* If we have relaimed everything on the isolated list, no stall */
 	if (nr_freed == nr_taken)
@@ -1220,9 +1219,9 @@ static unsigned long shrink_inactive_list(unsigned long max_scan,
 		nr_freed = shrink_page_list(&page_list, sc, PAGEOUT_IO_ASYNC);
 
 		/* Check if we should syncronously wait for writeback */
-		if (lumpy_reclaim &&
-		    should_reclaim_stall(nr_taken, nr_reclaimed, priority, sc)) {
-			/* congestion_wait(BLK_RW_ASYNC, HZ/10); */
+		if (should_reclaim_stall(nr_taken, nr_freed, priority,
+					lumpy_reclaim, sc)) {
+			congestion_wait(BLK_RW_ASYNC, HZ/10);
 
 			/*
 			 * The attempt at page out may have made some
