@@ -6,9 +6,9 @@ export PATH=/bin:/sbin:/system/bin
 # be sure file owners are root
 chown -R 0.0 /cwm
 
-cp /cwm/sbin/recovery /sbin/recovery
-chmod 755 /sbin/recovery
-ln -s recovery /sbin/busybox
+#cp /cwm/sbin/recovery /sbin/recovery
+chmod 755 /sbin/cwmrecovery
+ln -s cwmrecovery /sbin/busybox
 
 # res stuff
 cp -rpf /cwm/res/* /res

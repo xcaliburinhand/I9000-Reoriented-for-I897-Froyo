@@ -9,7 +9,6 @@ exec > /voodoo/logs/cwm_start_log.txt 2>&1
 rm /sdcard
 mkdir /sdcard
 
-chown root.root cwmrecovery
 ln -s busybox /sbin/[
 ln -s busybox /sbin/[[
 ln -s cwmrecovery /sbin/amend

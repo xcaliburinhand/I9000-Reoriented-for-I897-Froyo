@@ -155,7 +155,7 @@ if in_recovery; then
 	fi
 
 
-	if detect_cwm_recovery; then
+	#if detect_cwm_recovery; then
 		log "CWM Recovery Mode"
 		if test -f /cache/recovery/extendedcommand; then
 			log "CWM extended command: `cat /cache/recovery/extendedcommand`"
@@ -178,16 +178,16 @@ if in_recovery; then
 		# don't run conversion process if booting into CWM recovery
 		umount /cache
 		letsgo
-	else
+	#else
 		# stock recovery don't handle /cache or /dbdata in Ext4
 		# give them rfs filesystems
 
-		rm -rf /cwm
-		umount /cache
-		log "stock recovery compatibility: make DBDATA: and CACHE: standard RFS"
-		convert cache rfs
-		convert dbdata rfs
-	fi
+	#	rm -rf /cwm
+	#	umount /cache
+	#	log "stock recovery compatibility: make DBDATA: and CACHE: standard RFS"
+	#	convert cache rfs
+	#	convert dbdata rfs
+	#fi
 	
 	umount /cache
 else
