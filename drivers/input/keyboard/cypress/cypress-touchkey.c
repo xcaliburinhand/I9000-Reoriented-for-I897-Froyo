@@ -826,7 +826,7 @@ static int __init touchkey_init(void)
 	int retry = 10;
 	char data[3] = { 0, };
 
-#if !defined(CONFIG_GALAXY_I897)
+#if !defined(CONFIG_GALAXY_I897) && !defined(CONFIG_GALAXY_T959)
 		touchkey_keycode[2] = KEY_ENTER;
 #endif
 

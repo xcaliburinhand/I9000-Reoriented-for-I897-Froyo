@@ -732,7 +732,7 @@ static int sec_jack_probe(struct platform_device *pdev)
 	s3c_gpio_setpull(det_jack->gpio, S3C_GPIO_PULL_NONE);
 	set_irq_type(det_jack->eint, IRQ_TYPE_EDGE_BOTH);
 
-#if !defined(CONFIG_GALAXY_I897)
+#if !defined(CONFIG_GALAXY_I897) && !defined(CONFIG_GALAXY_T959)
 	det_jack->low_active = 1;
 #endif 
 

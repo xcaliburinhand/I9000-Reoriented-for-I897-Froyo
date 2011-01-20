@@ -1090,7 +1090,7 @@ static int __devinit s5p_tv_probe(struct platform_device *pdev)
 #ifdef CONFIG_HDMI_HPD
     s5ptv_status.hpd_status= s5p_hpd_get_state();
 #else
-#if 0
+#if !defined(CONFIG_GALAXY_I897) && !defined(CONFIG_GALAXY_T959)
     s5ptv_status.hpd_status= 1;//0;
 #else
     s5ptv_status.hpd_status=0;

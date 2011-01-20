@@ -115,11 +115,21 @@ config ARIES_LATONA
           Select S1 LATONA
 endchoice
 
+choice
+	prompt "Select S1 variant"
+
 config GALAXY_I897
 	bool "select Captivate"
 	depends on ARIES_EUR
 	help
 	  Captivate specific settings
+
+config GALAXY_T959
+        bool "select T-Mobile Vibrant"
+        depends on ARIES_EUR
+        help
+          T-Mobile Vibrant specific settings
+endchoice
 
 config DM9000_16BIT
 	bool "DM9000 16-bit"
