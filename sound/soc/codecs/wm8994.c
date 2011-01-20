@@ -36,6 +36,7 @@
 #include <plat/map-base.h>
 #include <mach/regs-clock.h> 
 #include "wm8994.h"
+#include "wm8994_voodoo.h"
 
 #define WM8994_VERSION "0.1"
 #define SUBJECT "wm8994.c"
@@ -209,6 +210,10 @@ int wm8994_write(struct snd_soc_codec *codec, unsigned int reg, unsigned int val
 	 *   D15..D9 WM8993 register offset
 	 *   D8...D0 register data
 	 */
+
+#ifdef CONFIG_SND_VOODOO
+	value = voodoo_hook_wm8994_write(codec, reg, value);
+#endif
 
 #if defined(CONFIG_ARIES_NTT)
 	//ssong100903. WM8994 Applications Issue Report CE000681 Changing digital path or clock enable bits when active may result in no sound output 
@@ -2034,6 +2039,10 @@ static int wm8994_pcm_probe(struct platform_device *pdev)
         }
 #else
                 /* Add other interfaces here */
+#endif
+
+#ifdef CONFIG_SND_VOODOO
+	voodoo_hook_wm8994_pcm_probe(codec);
 #endif
         return ret;
 }
