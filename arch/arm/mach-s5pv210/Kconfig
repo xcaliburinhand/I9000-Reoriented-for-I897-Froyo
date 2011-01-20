@@ -121,6 +121,12 @@ config GALAXY_I897
 	help
 	  Captivate specific settings
 
+config ALLOW_HEADPHONE_CALLS
+	bool "Heaphone Calls"
+	depends on GALAXY_I897
+	help
+	  Enable phone calls to go out the headphone jack
+
 config DM9000_16BIT
 	bool "DM9000 16-bit"
 	depends on MACH_SMDKV210 || MACH_VOGUEV210
