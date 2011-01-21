@@ -104,8 +104,8 @@ static int touchkey_led_status = 0;
 static bool touchkey_controller_vdd_on = false;
 static bool bln_enabled = true;				//indicates if BLN function is enabled/allowed
 static bool BLN_blink_enabled = true;			//indicates blink is set
-bool BacklightNotification_enabled= false;		//indicates ongoing LED Notification
-EXPORT_SYMBOL(BacklightNotification_enabled);		//export for mach-aries.c
+bool BacklightNotification_ongoing= false;		//indicates ongoing LED Notification
+EXPORT_SYMBOL(BacklightNotification_ongoing);		//export for mach-aries.c
 #endif
 
 struct i2c_driver touchkey_i2c_driver = {
@@ -832,6 +832,7 @@ static ssize_t backlightnotification_version(struct device *dev, struct device_a
   return sprintf(buf, "%u\n", BACKLIGHTNOTIFICATION_VERSION);
 }
 
+static DEVICE_ATTR(blink_control, S_IRUGO | S_IWUGO , blink_control_read, blink_control_write);
 static DEVICE_ATTR(enabled, S_IRUGO | S_IWUGO , backlightnotification_status_read, backlightnotification_status_write);
 static DEVICE_ATTR(notification_led, S_IRUGO | S_IWUGO , notification_led_status_read, notification_led_status_write);
 static DEVICE_ATTR(version, S_IRUGO , backlightnotification_version, NULL);

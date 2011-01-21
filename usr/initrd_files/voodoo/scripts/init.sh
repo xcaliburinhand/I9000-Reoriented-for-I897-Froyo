@@ -174,6 +174,9 @@ if in_recovery; then
 		ln -s /voodoo/scripts/mount_wrapper.sh /sbin/mount
 		> /voodoo/run/cwm_enabled
 
+		# move in special default.prop to allow adbd root
+		cp /default.prop.recovery /default.prop
+
 		log_suffix='-CWM-recovery'
 		# don't run conversion process if booting into CWM recovery
 		umount /cache
