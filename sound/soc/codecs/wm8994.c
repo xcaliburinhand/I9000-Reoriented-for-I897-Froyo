@@ -291,6 +291,9 @@ static int wm899x_inpga_put_volsw_vu(struct snd_kcontrol *kcontrol,
 //------------------------------------------------
 // Implementation of sound path
 //------------------------------------------------
+#if defined(CONFIG_ALLOW_HEADPHONE_CALLS)
+extern short int get_headset_status(void);              // For ear-jack control(MIC-Bias)
+#endif
 #define MAX_VOICECALL_PATH 4
 static const char *playback_path[] = { "OFF", "RCV", "SPK", "HP", "BT", "DUAL", "RING_SPK", "RING_HP", "RING_DUAL", "EXTRA_DOCK_SPEAKER", "TV_OUT"};
 static const char *voicecall_path[] = { "OFF", "RCV", "SPK", "HP", "BT", "HP_3POLE",};
@@ -465,6 +468,14 @@ static int wm8994_set_call_path(struct snd_kcontrol *kcontrol,
 
 	// Get path value
 	int path_num = ucontrol->value.integer.value[0];	
+#if defined(CONFIG_ALLOW_HEADPHONE_CALLS)
+	int headset_state = get_headset_status();
+
+	if(path_num == 1 && headset_state == 0x1 << 1)
+	{
+		path_num = 5; //force 3pole when headset is 3pole headphone
+	}
+#endif
 	
 	if(strcmp( mc->texts[path_num], voicecall_path[path_num]) )
 	{		
