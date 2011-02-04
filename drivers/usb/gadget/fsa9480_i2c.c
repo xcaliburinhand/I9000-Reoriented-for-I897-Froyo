@@ -1055,7 +1055,11 @@ void FSA9480_Enable_CP_USB(u8 enable)
 		check_reg = reg_value;
 			
 		mdelay(10);
+#if defined(CONFIG_GALAXY_I897)
+                fsa9480_write(client, REGISTER_MANUALSW1, 0x90);  // D+/- switching by Audio_L/R
+#else
 		fsa9480_write(client, REGISTER_MANUALSW1, 0x48);  // D+/- switching by Audio_L/R in HW04
+#endif
 
 		mdelay(10);
 		fsa9480_write(client, REGISTER_CONTROL, 0x1A);	
@@ -1095,7 +1099,11 @@ void FSA9480_Enable_SPK(u8 enable)
 		check_reg = reg_value;
 			
 		msleep(10);
+#if defined(CONFIG_GALAXY_I897)
+                fsa9480_write(client, REGISTER_MANUALSW1, 0x48);  // D+/- switching by Audio_L/R
+#else
 		fsa9480_write(client, REGISTER_MANUALSW1, 0x90);	// D+/- switching by V_Audio_L/R in HW03
+#endif
 		msleep(10);
 		fsa9480_write(client, REGISTER_CONTROL, 0x1A);	//manual switching
 
