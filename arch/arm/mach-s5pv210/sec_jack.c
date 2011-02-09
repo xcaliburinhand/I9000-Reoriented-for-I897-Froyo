@@ -118,6 +118,26 @@ void set_dock_state(int value)
 {
 	printk(KERN_INFO "set_dock_state : 0X%x\n", value);
 	switch_set_state(&switch_dock_detection, value);
+	switch(value)
+	{
+		case 0:
+		{
+			current_jack_type_status = SEC_JACK_NO_DEVICE;
+			break;
+		}
+                case 1:
+                {
+                        current_jack_type_status = SEC_EXTRA_DOCK_SPEAKER;
+                        break;
+                }
+                case 2:
+                {
+                        current_jack_type_status = SEC_EXTRA_CAR_DOCK_SPEAKER;
+                        break;
+                }
+		default:
+			break;
+	}	
 }
 
 static void jack_input_selector(int jack_type_status)
