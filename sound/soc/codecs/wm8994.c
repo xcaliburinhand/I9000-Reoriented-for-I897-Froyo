@@ -142,8 +142,9 @@ select_route universal_wm8994_voicecall_paths[] = {
 	wm8994_set_voicecall_headset, 		// HP
 	wm8994_set_voicecall_bluetooth,		// BT
 #if (defined FEATURE_3POLE_CALL_SUPPORT)	
-	wm8994_set_voicecall_headphone		// 3 Pole Headset
+	wm8994_set_voicecall_headphone,		// 3 Pole Headset
 #endif
+	wm8994_set_voicecall_extra_dock_speaker
 };
 
 #if (defined FEATURE_VOIP)
@@ -294,7 +295,7 @@ static int wm899x_inpga_put_volsw_vu(struct snd_kcontrol *kcontrol,
 extern short int get_headset_status(void);              // For ear-jack control(MIC-Bias)
 #define MAX_VOICECALL_PATH 4
 static const char *playback_path[] = { "OFF", "RCV", "SPK", "HP", "BT", "DUAL", "RING_SPK", "RING_HP", "RING_DUAL", "EXTRA_DOCK_SPEAKER", "TV_OUT"};
-static const char *voicecall_path[] = { "OFF", "RCV", "SPK", "HP", "BT", "HP_3POLE",};
+static const char *voicecall_path[] = { "OFF", "RCV", "SPK", "HP", "BT", "HP_3POLE", "EXTRA_DOCK_SPEAKER", };
 #if (defined FEATURE_VOIP)
 static const char *voipcall_path[] = {"OFF", "RCV", "SPK", "HP", "BT", "HP_3POLE", };
 #endif
@@ -372,12 +373,6 @@ static int wm8994_set_playback_path(struct snd_kcontrol *kcontrol,
 
 	// Get path value
 	int path_num = ucontrol->value.integer.value[0];
-        int headset_state = get_headset_status();
-
-        if(path_num == 2 && (headset_state == 0x1 << 6 || headset_state == 0x1 << 7))
-        {
-                path_num = 9; //force dock when headset is dock
-        }
 
 	//select the requested path from the array of function pointers
 	switch(path_num)
@@ -474,12 +469,25 @@ static int wm8994_set_call_path(struct snd_kcontrol *kcontrol,
 	int path_num = ucontrol->value.integer.value[0];	
 #if defined(CONFIG_ALLOW_HEADPHONE_CALLS)
 	int headset_state = get_headset_status();
+
 	if(path_num == 1 && headset_state == 0x1 << 1)
 	{
 		path_num = 5; //force 3pole when headset is 3pole headphone
+		DEBUG_LOG("Force 3pole path\n");
 	}
-#endif
 
+        if(path_num == 2 && (headset_state == 0x1 << 6 || headset_state == 0x1 << 7))
+        {
+                path_num = 9; //force dock when headset is dock
+		DEBUG_LOG("Force dock path\n");
+	}
+	else if(path_num == 1 && (headset_state == 0x1 << 6 || headset_state == 0x1 << 7))
+	{
+		path_num = 2; //use speaker when dock is attached and path is to handset
+		DEBUG_LOG("Force speaker path\n");
+        }
+#endif
+	
 	if(strcmp( mc->texts[path_num], voicecall_path[path_num]) )
 	{		
 		DEBUG_LOG_ERR("Unknown path %s\n", mc->texts[path_num] );
@@ -499,7 +507,11 @@ static int wm8994_set_call_path(struct snd_kcontrol *kcontrol,
 #if (defined FEATURE_3POLE_CALL_SUPPORT)
 		case HP_3POLE:
 #endif
-			DEBUG_LOG("routing VOICE PATH to %s", mc->texts[path_num] );
+                        DEBUG_LOG("routing VOICE PATH to %s", mc->texts[path_num] );
+                        break;
+		case EXTRA_DOCK_SPEAKER :
+			DEBUG_LOG("routing VOICE PATH to EXTRA_DOCK_SPEAKER");
+			path_num -= 3;
 			break;
 		
 		default:

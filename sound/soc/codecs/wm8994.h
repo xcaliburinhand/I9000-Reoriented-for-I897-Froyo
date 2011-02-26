@@ -167,6 +167,7 @@ void wm8994_set_voicecall_headphone(struct snd_soc_codec *codec);
 #endif
 void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec);
 void wm8994_set_voicecall_bluetooth(struct snd_soc_codec *codec);
+void wm8994_set_voicecall_extra_dock_speaker(struct snd_soc_codec *codec);
 void wm8994_set_fmradio_common(struct snd_soc_codec *codec, int onoff);
 void wm8994_set_fmradio_headset(struct snd_soc_codec *codec);
 void wm8994_set_fmradio_speaker(struct snd_soc_codec *codec);
