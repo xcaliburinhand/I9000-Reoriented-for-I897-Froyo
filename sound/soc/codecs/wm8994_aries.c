@@ -20,7 +20,9 @@
 #include <mach/regs-clock.h> 
 #include <mach/gpio.h> 
 #include "wm8994.h"
+#ifdef CONFIG_SND_VOODOO
 #include "wm8994_voodoo.h"
+#endif
 
 //------------------------------------------------
 //		Debug Feature
@@ -1573,10 +1575,6 @@ void wm8994_set_playback_headset(struct snd_soc_codec *codec)
 	val &= ~(WM8994_DAC1R_MUTE_MASK | WM8994_DAC1R_VOL_MASK);
 	val |= TUNING_DAC1R_VOL; //0 db volume	
 	wm8994_write(codec,WM8994_DAC1_RIGHT_VOLUME,val);	
-
-#ifdef CONFIG_SND_VOODOO
-	voodoo_hook_playback_headset();
-#endif
 	
 	// Unmute the AF1DAC1	
 	val = wm8994_read(codec, WM8994_AIF1_DAC1_FILTERS_1 ); 	
